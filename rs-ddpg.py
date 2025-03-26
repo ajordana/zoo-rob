@@ -188,7 +188,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
 
                 #######################    classical DDPG        #######################
 
-                actions += torch.normal(0, actor.action_scale * args.exploration_noise)
+                # actions += torch.normal(0, actor.action_scale * args.exploration_noise)
     
 
                 ####################### Randomize smoothing Trick #######################
@@ -247,16 +247,14 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 ####################### Randomize smoothing Trick #######################
 
                 actions = actor(data.observations)
-                # noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale).squeeze(), np.diag(actor.action_scale.squeeze() * args.exploration_noise), size=args.batch_size)                
                 noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale).reshape(-1), np.diag(actor.action_scale.reshape(-1) * args.exploration_noise), size=args.batch_size)                
                 noisy_actions = actions + torch.Tensor(noise).to(device)
 
                 with torch.no_grad():
                     reward = qf1(data.observations, noisy_actions) - qf1(data.observations, actions)
                     reward = reward.squeeze()
-                # import pdb; pdb.set_trace()
-                actor_loss = torch.vdot(reward, torch.mean((noisy_actions - actions) ** 2, 1)) / args.batch_size / args.exploration_noise
-
+                actor_batch_loss = reward * (noisy_actions - actions).pow(2).sum(dim=1) / args.exploration_noise ** 2
+                actor_loss = actor_batch_loss.mean()
                 #########################################################################
 
 
