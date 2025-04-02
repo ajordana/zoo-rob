@@ -247,8 +247,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 ####################### Randomize smoothing Trick #######################
 
                 actions = actor(data.observations)
-                noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale).reshape(-1), np.diag(actor.action_scale.reshape(-1) * args.exploration_noise), size=args.batch_size)                
-                noisy_actions = actions + torch.Tensor(noise).to(device)
+                with torch.no_grad():
+                    noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale).reshape(-1), np.diag(actor.action_scale.reshape(-1) * args.exploration_noise), size=args.batch_size)                
+                    noisy_actions = actions + torch.Tensor(noise).to(device)
 
                 with torch.no_grad():
                     reward = qf1(data.observations, noisy_actions) - qf1(data.observations, actions)
