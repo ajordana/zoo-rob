@@ -63,6 +63,10 @@ class Args:
     """the frequency of training policy (delayed)"""
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
+    rs_noise: float = 0.1
+    """noise used to compute the randomized smoothed gradient"""
+    rs_samples: int = 2
+    """number of randomized smoothing noise sample for every action"""
 
 
 def make_env(env_id, seed, idx, capture_video, run_name):
@@ -88,7 +92,7 @@ class QNetwork(nn.Module):
         self.fc3 = nn.Linear(256, 1)
 
     def forward(self, x, a):
-        x = torch.cat([x, a], 1)
+        x = torch.cat([x, a], -1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -188,8 +192,8 @@ poetry run pip install "stable_baselines3==2.0.0a1"
 
                 #######################    classical DDPG        #######################
 
-                # actions += torch.normal(0, actor.action_scale * args.exploration_noise)
-    
+                actions += torch.normal(0, actor.action_scale * args.exploration_noise)
+
 
                 ####################### Randomize smoothing Trick #######################
 
@@ -242,19 +246,18 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 #######################    classical DDPG        #######################
 
                 # actor_loss = -qf1(data.observations, actor(data.observations)).mean()
-    
 
                 ####################### Randomize smoothing Trick #######################
 
                 actions = actor(data.observations)
                 with torch.no_grad():
-                    noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale).reshape(-1), np.diag(actor.action_scale.reshape(-1) * args.exploration_noise), size=args.batch_size)                
-                    noisy_actions = actions + torch.Tensor(noise).to(device)
+                    noise = np.random.multivariate_normal(np.zeros_like(actor.action_scale.cpu().numpy()).reshape(-1), np.diag(actor.action_scale.reshape(-1).cpu().numpy() * args.rs_noise), size=(args.rs_samples, args.batch_size))
+                    noisy_actions = actions.unsqueeze(0) + torch.Tensor(noise).to(device)
 
                 with torch.no_grad():
-                    reward = qf1(data.observations, noisy_actions) - qf1(data.observations, actions)
-                    reward = reward.squeeze()
-                actor_batch_loss = reward * (noisy_actions - actions).pow(2).sum(dim=1) / args.exploration_noise ** 2
+                    reward = qf1(data.observations.unsqueeze(0).repeat((args.rs_samples, 1, 1)), noisy_actions) - qf1(data.observations, actions).unsqueeze(0)
+                    reward = reward.squeeze(-1)
+                actor_batch_loss = reward * (noisy_actions - actions.unsqueeze(0)).pow(2).sum(dim=-1) / args.rs_noise ** 2
                 actor_loss = actor_batch_loss.mean()
                 #########################################################################
 
