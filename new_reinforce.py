@@ -276,15 +276,13 @@ if __name__ == "__main__":
         mb_inds = b_inds
 
         _, newlogprob, entropy = agent(b_obs[mb_inds], b_actions[mb_inds])
-        logratio = newlogprob - b_logprobs[mb_inds]
-        ratio = logratio.exp()
 
         mb_advantages = b_advantages[mb_inds]
         if args.norm_adv:
             mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
         # Policy loss
-        pg_loss = -(mb_advantages * ratio).mean()
+        pg_loss = -(mb_advantages * newlogprob).mean()
 
         entropy_loss = entropy.mean()
         loss = pg_loss - args.ent_coef * entropy_loss
