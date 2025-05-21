@@ -65,7 +65,7 @@ class Args:
     """noise clip parameter of the Target Policy Smoothing Regularization"""
     rs_noise: float = 0.1
     """noise used to compute the randomized smoothed gradient"""
-    lse_samples: int = 10
+    lse_samples: int = 20
     """number of noise sample for the log-sum-exp trick for every action"""
     lse_temperature: float = 1
     """number of noise sample for the log-sum-exp trick for every action"""
@@ -258,9 +258,11 @@ poetry run pip install "stable_baselines3==2.0.0a1"
                 with torch.no_grad():
                     reward = qf1(data.observations.unsqueeze(0).repeat((args.lse_samples, 1, 1)), noisy_actions)
                     reward = reward.squeeze(-1)
-                    reward_exp = torch.exp( - (1 / args.lse_temperature) * (reward - torch.min(reward)))
-                    reward_sum = torch.sum(reward_exp)
-                actor_batch_loss = - args.lse_temperature * (reward_exp / reward_sum) * (noisy_actions - actions.unsqueeze(0)).pow(2).sum(dim=-1) / args.rs_noise 
+                    reward_exp = torch.exp( - (1 / args.lse_temperature) * (reward - torch.min(reward, axis=0)[0].unsqueeze(0)))
+                    reward_sum = torch.sum(reward_exp, axis=0).unsqueeze(0)
+                    weight = (reward_exp / reward_sum)
+                    # import pdb; pdb.set_trace()
+                actor_batch_loss = - args.lse_temperature * weight * (noisy_actions - actions.unsqueeze(0)).pow(2).sum(dim=-1) / args.rs_noise 
                 actor_loss = actor_batch_loss.mean()
                 #########################################################################
 
