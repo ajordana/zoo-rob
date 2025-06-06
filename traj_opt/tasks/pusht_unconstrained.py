@@ -28,6 +28,20 @@ class PushTUnconstrained(Task):
             mj_model, mujoco.mjtObj.mjOBJ_SENSOR, "orientation"
         )
 
+        self.ub = jnp.array([1., 1.])
+        self.lb = jnp.array([-1., -1.])
+
+    def _bound_violation(self, ctrl, ord=2):
+        """
+        Return ‖v‖ where v is the element-wise violation of controls
+        against [lb, ub].
+        """
+        lower = jnp.maximum(self.lb - ctrl, 0)   # only where A is below lb
+        upper = jnp.maximum(ctrl - self.ub, 0)   # only where A is above ub
+        v = lower + upper                # violation vector
+
+        return jnp.linalg.norm(v, ord=2)
+
     def _get_position_err(self, state: mjx.Data) -> jax.Array:
         """Position of the block relative to the target position."""
         sensor_adr = self.model.sensor_adr[self.block_position_sensor]
@@ -55,9 +69,10 @@ class PushTUnconstrained(Task):
         position_cost = jnp.sum(jnp.square(position_err))
         orientation_cost = jnp.sum(jnp.square(orientation_err))
         close_to_block_cost = jnp.sum(jnp.square(close_to_block_err))
-        control_cost = jnp.sum(jnp.square(control))
+        # control_cost = jnp.sum(jnp.square(control))
+        bound_violation_cost = self._bound_violation(control)
 
-        return position_cost + orientation_cost + 0.01 * close_to_block_cost + 0.1 * control_cost
+        return position_cost + orientation_cost + 0.01 * close_to_block_cost + 5 * bound_violation_cost
 
     def terminal_cost(self, state: mjx.Data) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""

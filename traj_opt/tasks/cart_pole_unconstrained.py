@@ -20,6 +20,20 @@ class CartPoleUnconstrained(Task):
         )
         super().__init__(mj_model, trace_sites=["tip"])
 
+        self.ub = jnp.array([1.])
+        self.lb = jnp.array([-1.])
+
+    def _bound_violation(self, ctrl, ord=2):
+        """
+        Return ‖v‖ where v is the element-wise violation of controls
+        against [lb, ub].
+        """
+        lower = jnp.maximum(self.lb - ctrl, 0)   # only where A is below lb
+        upper = jnp.maximum(ctrl - self.ub, 0)   # only where A is above ub
+        v = lower + upper                # violation vector
+
+        return jnp.linalg.norm(v, ord=2)
+    
     def _distance_to_upright(self, state: mjx.Data) -> jax.Array:
         """Get a measure of distance to the upright position."""
         theta = state.qpos[1] + jnp.pi
@@ -31,8 +45,10 @@ class CartPoleUnconstrained(Task):
         theta_cost = self._distance_to_upright(state)
         centering_cost = jnp.sum(jnp.square(state.qpos[0]))
         velocity_cost = 0.01 * jnp.sum(jnp.square(state.qvel))
-        control_cost = 0.5 * jnp.sum(jnp.square(control)) # Change control cost weight from 0.01 to 0.5
-        return theta_cost + centering_cost + velocity_cost + control_cost
+        control_cost = 0.01 * jnp.sum(jnp.square(control)) 
+        bound_violation_cost = self._bound_violation(control)
+
+        return theta_cost + centering_cost + velocity_cost + control_cost + 5 * bound_violation_cost
 
     def terminal_cost(self, state: mjx.Data) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
