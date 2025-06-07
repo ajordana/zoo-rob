@@ -8,7 +8,6 @@ import numpy as np
 from mujoco import mjx
 import copy
 from hydrax.alg_base import Trajectory, SamplingBasedController
-import equinox
 import joblib
 import tqdm
 from functools import partial
@@ -18,6 +17,7 @@ from pathlib import Path
 class traj_opt_helper:
     def __init__(
         self,
+        name: str,
         controller: SamplingBasedController,
         mj_model: mujoco.MjModel,
         mj_data: mujoco.MjData,
@@ -37,6 +37,7 @@ class traj_opt_helper:
         mjx_data = mjx_data.replace(mocap_pos=mj_data.mocap_pos, mocap_quat=mj_data.mocap_quat)
         self.mjx_data = mjx_data
         self.viewer = None
+        self.controller_name = name
 
         # initialize the controller
         jit_optimize = jax.jit(partial(controller.optimize))
@@ -68,7 +69,7 @@ class traj_opt_helper:
 
         self.__warm_up()
 
-        controller_name = self.controller.__class__.__name__
+        controller_name = self.controller_name
         task_name = self.controller.task.__class__.__name__
 
         base_dir = Path(__file__).parent
@@ -108,26 +109,8 @@ class traj_opt_helper:
             print("Results saved")
         except Exception as e:
             print(f"Failed to save results: {e}")
-
-    def optimize(
-        self,
-        max_iteration: int = 100,
-        seed: int = 1
-    ) -> list[list, list, Trajectory]:
-
-        policy_params = self.controller.init_params(seed=seed)
-        cost_list = []
-
-        for i in tqdm.tqdm(range(max_iteration)):
-            policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
-            trajectory_cost = jnp.sum(rollouts.costs[-1, :], axis=-1) # Take the current trajectory costs            
-            cost_list.append(trajectory_cost) # Append the cost of the current control trajectory to the list
-
-        print("Optimization done.")
-
-        return cost_list, policy_params, rollouts
     
-    def opt(
+    def optimize(
         self,
         max_iteration: int = 100,
         seed: int = 1
@@ -141,20 +124,14 @@ class traj_opt_helper:
 
         knots_list.append(mean_knots)
         
-        # trajectory_cost = self.get_cost(mean_knots[None, ...])
-        
         for i in tqdm.tqdm(range(max_iteration)):
             policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
 
             mean_knots = policy_params.mean
             knots_list.append(mean_knots)
 
-            # trajectory_cost = jnp.sum(rollouts.costs[-1, :], axis=-1) # Take the current trajectory costs            
-            # cost_list.append(trajectory_cost) # Append the cost of the current control trajectory to the list
-            
         costs_list = self.get_cost_list(knots_list)
 
-        # assert (np.array(costs_list[:-1]) == np.array(cost_list)).all()
         print("Optimization done.")
 
         return costs_list, policy_params, rollouts
@@ -169,14 +146,7 @@ class traj_opt_helper:
 
         knots = jnp.array(knots_list)      
 
-        tk = (
-            jnp.linspace(0.0, ctrl.plan_horizon, self.num_knots) + self.mjx_data.time
-        )
-
-        tq = jnp.linspace(tk[0], tk[-1], ctrl.ctrl_steps)
-        controls = ctrl.interp_func(tq, tk, knots)
-
-        print(f'mean controls from get_cost_list:{controls}')
+        controls = self.knots2ctrls(knots)
 
         state = self.mjx_data
         _, rollouts = ctrl.eval_rollouts(task.model, state, controls, knots)
@@ -185,24 +155,20 @@ class traj_opt_helper:
 
         return list(costs)
         
-
-    def get_cost(
-        self,
-        knots: jax.Array,
-    ) -> list:
+    def knots2ctrls(self,
+                    knots: jax.Array
+        )-> jax.Array:
 
         ctrl = self.controller
-        task = self.controller.task
 
-        tk = jnp.linspace(0.0, ctrl.plan_horizon, ctrl.num_knots)
+        tk = (
+            jnp.linspace(0.0, ctrl.plan_horizon, ctrl.num_knots) + self.mjx_data.time
+        )
+
         tq = jnp.linspace(tk[0], tk[-1], ctrl.ctrl_steps)
         controls = ctrl.interp_func(tq, tk, knots)
 
-        state = self.mjx_data
-        _, rollouts = ctrl.eval_rollouts(task.model, state, controls, knots)
-
-        return jnp.sum(rollouts.costs[0, :], axis=-1)
-        
+        return controls
         
     def optimize_save_results(
         self,
@@ -212,7 +178,7 @@ class traj_opt_helper:
 
         self.__warm_up()
         policy_params = self.controller.init_params(seed=seed)
-        controller_name = self.controller.__class__.__name__
+        controller_name = self.controller_name
         task_name = self.controller.task.__class__.__name__
         base_dir = Path(__file__).parent
         path = os.path.join(base_dir,"data", task_name)
@@ -245,7 +211,7 @@ class traj_opt_helper:
         
         self.__create_temporary_viewer()
 
-        controller_name = controller.__class__.__name__
+        controller_name = self.controller_name
         task_name = task.__class__.__name__
 
         base_dir = Path(__file__).parent
@@ -293,13 +259,3 @@ class traj_opt_helper:
     def __reset_tmp_data(self):
         self.tmp_mj_data.qpos[:] = self.mj_data.qpos
         self.tmp_mj_data.qvel[:] = self.mj_data.qvel
-
-    def visualize_all(self):
-        with tqdm.tqdm(total=self.controller.num_populations, desc="Visualizing rollouts", ncols=0) as pbar:
-            while True:
-                for i in range(self.controller.num_populations):
-                    self.visualize_rollout(i, loop=False)
-                    pbar.update(1)
-                pbar.reset()
-            # for i in tqdm.tqdm(range(self.controller.num_populations), desc="Visualizing rollouts"):
-            #     self.visualize_rollout(i, loop=False)
