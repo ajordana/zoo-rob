@@ -94,7 +94,7 @@ class traj_opt_helper:
         cost_array = np.array(cost_list_list)
         last_costs = cost_array[:, -1]
 
-        cost_array = cost_array.mean(axis = 0)
+        # cost_array = cost_array.mean(axis = 0)
 
         best_idx = np.argmin(last_costs)
         best_params = params_list[best_idx]
