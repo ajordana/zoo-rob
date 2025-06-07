@@ -19,13 +19,13 @@ from algs import create_algorithm
 num_trails = 6
 max_iterations = 100
 num_samples = 2048
-sigma = 0.3
+sigma = 0.2
 temperature = 0.1
 spline = "zero"
 horizon = 1.0
 num_knots = 100 # set this to (horizon/mj_model.opt.time_step) will have no spline interpolation
 
-algorithms = ["CMA-ES", "PredictiveSampling", "RandomizedSmoothing", "MPPI", "MPPI-CMA"]
+algorithms = ["MPPI", "MPPI-CMA", "CMA-ES", "PredictiveSampling", "RandomizedSmoothing"]
 
 # # CubeRotation
 # task = CubeRotation()
@@ -33,9 +33,9 @@ algorithms = ["CMA-ES", "PredictiveSampling", "RandomizedSmoothing", "MPPI", "MP
 # mj_data = mujoco.MjData(mj_model)
 
 # CartPole
-task = CartPoleUnconstrained()
-mj_model = task.mj_model
-mj_data = mujoco.MjData(mj_model)
+# task = CartPoleUnconstrained()
+# mj_model = task.mj_model
+# mj_data = mujoco.MjData(mj_model)
 
 # HumanoidStandup
 # task = HumanoidStandup()
@@ -57,10 +57,10 @@ mj_data = mujoco.MjData(mj_model)
 
 
 # PushT
-# task = PushTUnconstrained()
-# mj_model = task.mj_model
-# mj_data = mujoco.MjData(mj_model)
-# mj_data.qpos = [0.1, 0.1, 1.3, 0.0, 0.0]
+task = PushTUnconstrained()
+mj_model = task.mj_model
+mj_data = mujoco.MjData(mj_model)
+mj_data.qpos = [0.1, 0.1, 1.3, 0.0, 0.0]
 
 # ctrl = create_algorithm(name = "CMA-ES", 
 #                         task = task,
@@ -87,3 +87,55 @@ for algorithm in algorithms:
 
     to = traj_opt_helper(algorithm, ctrl, mj_model, mj_data)
     to.trails(max_iteration=max_iterations, num_trails = num_trails)
+
+
+path = traj_opt_helper.get_path(task)
+
+CMAES_costs = joblib.load(path + "CMA-ES_costs_trails_average.pkl")
+PS_costs = joblib.load(path + "PredictiveSampling_costs_trails_average.pkl")
+MPPI_costs = joblib.load(path + "MPPI_costs_trails_average.pkl")
+MPPI_CMA_costs = joblib.load(path + "MPPI-CMA_costs_trails_average.pkl")
+GS_costs = joblib.load(path + "RandomizedSmoothing_costs_trails_average.pkl")
+
+import matplotlib.pyplot as plt
+
+methods = {
+    "CMA-ES"           : CMAES_costs,
+    "PredictiveSampling": PS_costs,
+    "MPPI"             : MPPI_costs,
+    "MPPI-CMA"         : MPPI_CMA_costs,
+    "GaussianSmoothing": GS_costs,
+}
+
+# ------------------------------------------------------------------
+# 1)  Compute summaries and plot
+# ------------------------------------------------------------------
+iters   = np.arange(next(iter(methods.values())).shape[1])   # x-axis
+colors  = plt.rcParams["axes.prop_cycle"].by_key()["color"]  # default color cycle
+
+plt.figure(figsize=(10, 6))
+
+for (name, costs), color in zip(methods.items(), colors):
+    q25    = np.quantile(costs, 0.25, axis=0)
+    median = np.quantile(costs, 0.50, axis=0)
+    q75    = np.quantile(costs, 0.75, axis=0)
+    
+    plt.plot(iters, median, lw=2, label=name, color=color)
+    plt.fill_between(iters, q25, q75, alpha=0.25, color=color)
+
+# ------------------------------------------------------------------
+# 2)  Cosmetics
+# ------------------------------------------------------------------
+task_name = task.__class__.__name__
+plt.title(f"{task_name} task — over {num_trails} seeds")
+plt.xlabel("Iteration")
+plt.ylabel("Cost")
+# plt.yscale("log")      # uncomment if the range is huge
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# ------------------------------------------------------------------
+# 3)  Optional rollout visualisation
+# ------------------------------------------------------------------
+to.visualize_rollout(task, controller=ctrl)
