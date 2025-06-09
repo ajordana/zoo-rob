@@ -1,6 +1,7 @@
 <mujoco model="pendulum_unocnstrained">
   <!-- added manually -->
-  <option timestep="0.02" iterations="1" ls_iterations="4">
+  <!-- Changed from 0.02 to 0.01 for consistency of the benchmarks -->
+  <option timestep="0.01" iterations="1" ls_iterations="5">
     <flag contact="disable" eulerdamp="disable"/>
   </option>
 
@@ -19,7 +20,8 @@
 
   <actuator>
     <!-- Removed control limits -->
-    <motor gear="2" name="pendulum_joint_actuator" joint="pendulum_joint"/>
+    <!-- Increased the gear ratio from 2 to 5 to get a visually reasonable trajectory-->
+    <motor gear="5" name="pendulum_joint_actuator" joint="pendulum_joint"/>
   </actuator>
   <equality/>
 </mujoco>
