@@ -31,6 +31,7 @@
   </worldbody>
 
   <actuator>
+    <!-- Removed control limits -->
     <motor name="slide" joint="slider" gear="20" />
   </actuator>
 </mujoco>
