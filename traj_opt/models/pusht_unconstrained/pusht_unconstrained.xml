@@ -32,6 +32,7 @@
   </worldbody>
 
   <actuator>
+    <!-- Removed control limits -->
     <velocity name="x_motor" joint="root_x" />
     <velocity name="y_motor" joint="root_y" />
   </actuator>
