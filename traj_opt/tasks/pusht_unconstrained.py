@@ -7,10 +7,12 @@ from mujoco import mjx
 from pathlib import Path
 
 from hydrax.task_base import Task
-
 ROOT = str(Path(__file__).resolve().parent.parent)
 
+
 class PushTUnconstrained(Task):
+    # This task is modified from Hydrax, the control limits are enforced as penalties to avoid clipping
+    # https://github.com/vincekurtz/hydrax/tree/main/hydrax/tasks
     """Push a T-shaped block to a desired pose."""
 
     def __init__(self) -> None:
@@ -33,6 +35,7 @@ class PushTUnconstrained(Task):
 
     def _bound_violation(self, ctrl, ord=2):
         """
+        Constrained are enforced using eqn(14) of this paper: https://arxiv.org/pdf/2404.10395
         Return ‖v‖ where v is the element-wise violation of controls
         against [lb, ub].
         """
@@ -40,7 +43,14 @@ class PushTUnconstrained(Task):
         upper = jnp.maximum(ctrl - self.ub, 0)   # only where A is above ub
         v = lower + upper                # violation vector
 
-        return jnp.linalg.norm(v, ord=2)
+        # raw penalty = L_ord norm of the violation
+        penalty = 10 * jnp.linalg.norm(v, ord)
+
+        # if penalty != 0 then add 1, else leave as 0: 
+        penalty = jnp.where(penalty != 0, penalty + 1, penalty)
+
+        return penalty
+
 
     def _get_position_err(self, state: mjx.Data) -> jax.Array:
         """Position of the block relative to the target position."""
@@ -72,7 +82,7 @@ class PushTUnconstrained(Task):
         # control_cost = jnp.sum(jnp.square(control))
         bound_violation_cost = self._bound_violation(control)
 
-        return position_cost + orientation_cost + 0.01 * close_to_block_cost + 1 * bound_violation_cost
+        return position_cost + orientation_cost + 0.01 * close_to_block_cost + bound_violation_cost
 
     def terminal_cost(self, state: mjx.Data) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""
