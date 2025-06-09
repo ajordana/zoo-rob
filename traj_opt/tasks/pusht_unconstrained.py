@@ -44,7 +44,7 @@ class PushTUnconstrained(Task):
         v = lower + upper                # violation vector
 
         # raw penalty = L_ord norm of the violation
-        penalty = 10 * jnp.linalg.norm(v, ord)
+        penalty = 50 * jnp.linalg.norm(v, ord)
 
         # if penalty != 0 then add 1, else leave as 0: 
         penalty = jnp.where(penalty != 0, penalty + 1, penalty)

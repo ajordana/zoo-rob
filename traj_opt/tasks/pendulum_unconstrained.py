@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = str(Path(__file__).resolve().parent.parent)
 
 
-class Pendulum(Task):
+class PendulumUnconstrained(Task):
     # This task is modified from Hydrax, the control limits are enforced as penalties to avoid clipping
     # https://github.com/vincekurtz/hydrax/tree/main/hydrax/tasks
     """An inverted pendulum swingup task."""
@@ -36,7 +36,7 @@ class Pendulum(Task):
         v = lower + upper                # violation vector
 
         # raw penalty = L_ord norm of the violation
-        penalty = 100 * jnp.linalg.norm(v, ord)
+        penalty = 25 * jnp.linalg.norm(v, ord)
         
         # if penalty != 0 then add 1, else leave as 0: 
         penalty = jnp.where(penalty != 0, penalty + 1, penalty)
