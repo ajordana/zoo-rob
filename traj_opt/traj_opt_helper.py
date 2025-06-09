@@ -2,7 +2,14 @@ import time
 
 import jax
 import jax.numpy as jnp
+import os
+os.environ['MUJOCO_GL'] = 'egl'   # or 'osmesa'
 import mujoco
+
+import imageio
+from IPython.display import Image as IPyImage
+from mujoco import GLContext, MjvScene, MjvOption, MjrContext
+
 import mujoco.viewer
 import numpy as np
 from mujoco import mjx
@@ -11,8 +18,9 @@ from hydrax.alg_base import Trajectory, SamplingBasedController
 import joblib
 import tqdm
 from functools import partial
-import os
 from pathlib import Path
+import matplotlib.pyplot as plt
+
 
 class traj_opt_helper:
     def __init__(
@@ -42,6 +50,14 @@ class traj_opt_helper:
         # initialize the controller
         jit_optimize = jax.jit(partial(controller.optimize))
         self.jit_optimize = jit_optimize
+    
+
+    @staticmethod
+    def get_path(task):
+        task_name = task.__class__.__name__
+        base_dir = Path(__file__).parent
+        path = os.path.join(base_dir,"data", task_name) + "/"
+        return path
 
     def __warm_up(self):
         if self.warm_up:
@@ -94,10 +110,17 @@ class traj_opt_helper:
         cost_array = np.array(cost_list_list)
         last_costs = cost_array[:, -1]
 
+        # Find the best final solution
         best_idx = np.argmin(last_costs)
         best_params = params_list[best_idx]
         best_rollout = rollouts_list[best_idx]
-        best_ctrls = best_rollout.controls[-1]
+        best_knots = best_params.mean
+
+        # Convert the solution from knots to controls
+        best_ctrls = self.knots2ctrls(best_knots[None, ...]).squeeze(axis=0)
+
+        # Plot the controls to check their values
+        self.plot_controls(best_ctrls)
         
         try:
             joblib.dump(cost_array, path + "/" + controller_name + "_costs_trails_average.pkl")
@@ -127,11 +150,11 @@ class traj_opt_helper:
             mean_knots = policy_params.mean
             knots_list.append(mean_knots)
 
-        costs_list = self.get_cost_list(knots_list)
+        cost_list = self.get_cost_list(knots_list)
 
         print("Optimization done.")
 
-        return costs_list, policy_params, rollouts
+        return cost_list, policy_params, rollouts
     
     def get_cost_list(
         self,
@@ -167,6 +190,46 @@ class traj_opt_helper:
         controls = ctrl.interp_func(tq, tk, knots)
 
         return controls
+    
+    def plot_controls(self, controls):
+        """
+        Plot the sequence of control vectors.
+        
+        Args:
+            controls: array of shape (horizon, Nu), where horizon is
+                    the number of time steps and Nu is the number of controls.
+        """
+
+        ctrls = np.asarray(controls)
+        horizon, Nu = ctrls.shape
+        
+        dt = float(self.controller.dt)
+        t = np.arange(horizon) * dt
+        
+        if self.controller.task.ub is not None:
+            ub = self.controller.task.ub
+            lb = self.controller.task.lb
+
+        # create one subplot per control dimension
+        fig, axes = plt.subplots(Nu, 1, sharex=True, figsize=(8, 4*Nu))
+        if Nu == 1:
+            axes = [axes]  # make it iterable
+        
+        for i, ax in enumerate(axes):
+            ax.plot(t, ctrls[:, i], lw=1.5)
+
+            if ub is not None:
+                # plot upper/lower bounds as horizontal dashed lines
+                ax.axhline(y=ub[i], color='r', linestyle='--', label="ub" if i==0 else None)
+                ax.axhline(y=lb[i], color='r', linestyle='--', label="lb" if i==0 else None)
+            
+            ax.set_ylabel(f"$u_{i}$")
+            ax.grid(True)
+        
+        axes[-1].set_xlabel("Time [s]")
+        fig.suptitle(f"Control Trajectories ({self.controller_name})", y=1.00)
+        fig.tight_layout()
+        plt.show(block=False)
         
     def optimize_save_results(
         self,
@@ -183,12 +246,20 @@ class traj_opt_helper:
 
         os.makedirs(path, exist_ok=True)
 
+        knots_list = [] 
         cost_list = []
+        policy_params = self.controller.init_params(seed=seed)
+        mean_knots = policy_params.mean 
+        knots_list.append(mean_knots)
+
 
         for i in tqdm.tqdm(range(max_iteration)):
             policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
-            trajectory_cost = jnp.sum(rollouts.costs[-1, :], axis=-1) # Take the current trajectory costs            
-            cost_list.append(trajectory_cost) # Append the cost of the current control trajectory to the list
+
+            mean_knots = policy_params.mean
+            knots_list.append(mean_knots)
+
+        cost_list = self.get_cost_list(knots_list)
 
         print("Optimization done.")
 
@@ -204,12 +275,10 @@ class traj_opt_helper:
 
         return cost_list
 
-    def visualize_rollout(self, task,
-                          controller):
+    def visualize_rollout(self, task, controller_name):
         
         self.__create_temporary_viewer()
 
-        controller_name = self.controller_name
         task_name = task.__class__.__name__
 
         base_dir = Path(__file__).parent
@@ -242,13 +311,8 @@ class traj_opt_helper:
             if i == horizon:
                 i = 0
                 self.__reset_tmp_data()
-    @staticmethod
-    def get_path(task):
-        task_name = task.__class__.__name__
-        base_dir = Path(__file__).parent
-        path = os.path.join(base_dir,"data", task_name) + "/"
 
-        return path
+
     def __create_temporary_viewer(self):
         if self.viewer is None:
             self.tmp_mj_data = copy.copy(self.mj_data)
@@ -257,3 +321,86 @@ class traj_opt_helper:
     def __reset_tmp_data(self):
         self.tmp_mj_data.qpos[:] = self.mj_data.qpos
         self.tmp_mj_data.qvel[:] = self.mj_data.qvel
+            
+    def visualize_rollout_gif(
+        self,
+        task, 
+        controller_name: str,
+        fps: int = None,
+        width: int = 480,
+        height: int = 480,
+        camera_id: int = -1,
+    ) -> IPyImage:
+        """
+        Renders the rollout for the named controller into a GIF and returns it.
+        Controls will be loaded from:
+        data/<TaskName>/<controller_name>_trails_best_ctrls.pkl
+        GIF is written to:
+        data/<TaskName>/<controller_name>.gif
+        """
+        # locate the folder exactly as visualize_rollout does
+        task_name = task.__class__.__name__
+        base_dir  = Path(__file__).parent
+        path      = os.path.join(base_dir, "data", task_name)
+
+        pkl_file = os.path.join(path, f"{controller_name}_trails_best_ctrls.pkl")
+        controls = joblib.load(pkl_file)
+
+        # prepare temporary data for rendering
+        self.__create_temporary_viewer()
+        data = self.tmp_mj_data
+        
+        # Reset to initial state
+        self.__reset_tmp_data()
+        
+        # Create renderer using the modern MuJoCo API
+        renderer = mujoco.Renderer(self.mj_model, height=height, width=width)
+        
+        # Set camera (if specified)
+        if camera_id >= 0:
+            renderer.enable_camera_id = camera_id
+
+        # framerate from sim timestep
+        dt  = float(self.mj_model.opt.timestep)
+        fps = fps or max(1, int(1.0 / dt))
+
+        frames = []
+        
+        try:
+            for u in controls:
+                data.ctrl[:] = u
+                mujoco.mj_step(self.mj_model, data)
+                
+                # Update scene and render
+                renderer.update_scene(data)
+                img = renderer.render()
+                frames.append(img)
+                
+        finally:
+            # Always close the renderer to free resources
+            renderer.close()
+
+        # ensure output dir and write GIF
+        os.makedirs(path, exist_ok=True) 
+        gif_path = os.path.join(path, f"{controller_name}.gif")
+        imageio.mimsave(gif_path, frames, fps=fps)
+        
+        print(f"GIF saved to: {gif_path}")
+        
+        # Display the GIF in Jupyter notebook
+        from IPython.display import Image, display
+        import base64
+        
+        # Method 1: Try loading from file
+        try:
+            gif_image = Image(filename=gif_path)
+            display(gif_image)
+            return gif_image
+        except:
+            # Method 2: Load as base64 data (more reliable)
+            with open(gif_path, 'rb') as f:
+                gif_data = f.read()
+            
+            gif_image = Image(data=gif_data, format='gif')
+            display(gif_image)
+            return gif_image
