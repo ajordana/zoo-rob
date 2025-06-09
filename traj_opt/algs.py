@@ -59,7 +59,7 @@ def create_algorithm(
             d_std=1,
             c_c=0,
             c_1=0,
-            c_mu=0.5,
+            c_mu=0.25,
             chi_n=1,
         )
 
