@@ -94,8 +94,6 @@ class traj_opt_helper:
         cost_array = np.array(cost_list_list)
         last_costs = cost_array[:, -1]
 
-        # cost_array = cost_array.mean(axis = 0)
-
         best_idx = np.argmin(last_costs)
         best_params = params_list[best_idx]
         best_rollout = rollouts_list[best_idx]
@@ -116,7 +114,6 @@ class traj_opt_helper:
         seed: int = 1
     ) -> list[list, list, Trajectory]:
 
-        cost_list = []
         knots_list = [] 
     
         policy_params = self.controller.init_params(seed=seed)
@@ -158,6 +155,7 @@ class traj_opt_helper:
     def knots2ctrls(self,
                     knots: jax.Array
         )-> jax.Array:
+        # This function follow exactly how was spline interpolation done in Hydrax: https://github.com/vincekurtz/hydrax/blob/main/hydrax/alg_base.py/#L208
 
         ctrl = self.controller
 
