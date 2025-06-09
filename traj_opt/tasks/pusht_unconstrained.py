@@ -44,7 +44,7 @@ class PushTUnconstrained(Task):
         v = lower + upper                # violation vector
 
         # raw penalty = L_ord norm of the violation
-        penalty = 50 * jnp.linalg.norm(v, ord)
+        penalty = 25 * jnp.linalg.norm(v, ord)
 
         # if penalty != 0 then add 1, else leave as 0: 
         penalty = jnp.where(penalty != 0, penalty + 1, penalty)
@@ -82,7 +82,7 @@ class PushTUnconstrained(Task):
         # control_cost = jnp.sum(jnp.square(control))
         bound_violation_cost = self._bound_violation(control)
 
-        return position_cost + orientation_cost + 0.01 * close_to_block_cost + bound_violation_cost
+        return position_cost + orientation_cost + 0.1 * close_to_block_cost + bound_violation_cost
 
     def terminal_cost(self, state: mjx.Data) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""
