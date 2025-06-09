@@ -244,9 +244,9 @@ class traj_opt_helper:
             if i == horizon:
                 i = 0
                 self.__reset_tmp_data()
-
-    def get_path(self):
-        task_name = self.controller.task.__class__.__name__
+    @staticmethod
+    def get_path(task):
+        task_name = task.__class__.__name__
         base_dir = Path(__file__).parent
         path = os.path.join(base_dir,"data", task_name) + "/"
 
