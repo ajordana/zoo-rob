@@ -178,7 +178,7 @@ class traj_opt_helper:
     def knots2ctrls(self,
                     knots: jax.Array
         )-> jax.Array:
-        # This function follow exactly how was spline interpolation done in Hydrax: https://github.com/vincekurtz/hydrax/blob/main/hydrax/alg_base.py/#L208
+        # This function follow exactly how spline interpolation was done in Hydrax: https://github.com/vincekurtz/hydrax/blob/main/hydrax/alg_base.py/#L208
 
         ctrl = self.controller
 
@@ -206,24 +206,23 @@ class traj_opt_helper:
         dt = float(self.controller.dt)
         t = np.arange(horizon) * dt
         
-        if self.controller.task.ub is not None:
-            ub = self.controller.task.ub
-            lb = self.controller.task.lb
+        ub = getattr(self.controller.task, 'ub', None)
+        lb = getattr(self.controller.task, 'lb', None)
 
         # create one subplot per control dimension
-        fig, axes = plt.subplots(Nu, 1, sharex=True, figsize=(8, 4*Nu))
+        fig, axes = plt.subplots(Nu, 1, sharex=True, figsize=(8, 2*Nu))
         if Nu == 1:
             axes = [axes]  # make it iterable
         
         for i, ax in enumerate(axes):
             ax.plot(t, ctrls[:, i], lw=1.5)
 
-            if ub is not None:
+            if ub is not None and lb is not None:
                 # plot upper/lower bounds as horizontal dashed lines
                 ax.axhline(y=ub[i], color='r', linestyle='--', label="ub" if i==0 else None)
                 ax.axhline(y=lb[i], color='r', linestyle='--', label="lb" if i==0 else None)
             
-            ax.set_ylabel(f"$u_{i}$")
+            ax.set_ylabel(f"$u_{i+1}$")
             ax.grid(True)
         
         axes[-1].set_xlabel("Time [s]")
@@ -360,9 +359,12 @@ class traj_opt_helper:
         if camera_id >= 0:
             renderer.enable_camera_id = camera_id
 
-        # framerate from sim timestep
-        dt  = float(self.mj_model.opt.timestep)
-        fps = fps or max(1, int(1.0 / dt))
+        # Calculate proper FPS - default to 30 FPS for smooth playback
+        dt = float(self.mj_model.opt.timestep)
+        if fps is None:
+            # Use 30 FPS by default for smooth visualization
+            # If you want real-time speed, use: fps = int(1.0 / dt)
+            fps = 60
 
         frames = []
         
@@ -380,10 +382,18 @@ class traj_opt_helper:
             # Always close the renderer to free resources
             renderer.close()
 
-        # ensure output dir and write GIF
+        # ensure output dir and write GIF with looping
         os.makedirs(path, exist_ok=True) 
         gif_path = os.path.join(path, f"{controller_name}.gif")
-        imageio.mimsave(gif_path, frames, fps=fps)
+        
+        # Save GIF with infinite looping and proper duration
+        imageio.mimsave(
+            gif_path, 
+            frames, 
+            fps=fps,
+            loop=0,  # 0 means infinite loop
+            duration=1.0/fps  # Ensure consistent frame timing
+        )
         
         print(f"GIF saved to: {gif_path}")
         
@@ -394,7 +404,6 @@ class traj_opt_helper:
         # Method 1: Try loading from file
         try:
             gif_image = Image(filename=gif_path)
-            display(gif_image)
             return gif_image
         except:
             # Method 2: Load as base64 data (more reliable)
@@ -402,5 +411,4 @@ class traj_opt_helper:
                 gif_data = f.read()
             
             gif_image = Image(data=gif_data, format='gif')
-            display(gif_image)
             return gif_image
