@@ -1,4 +1,5 @@
 import time
+import statistics
 
 import jax
 import jax.numpy as jnp
@@ -20,19 +21,6 @@ import tqdm
 from functools import partial
 from pathlib import Path
 import matplotlib.pyplot as plt
-
-@staticmethod
-def time_profile(
-    algorithms: list,
-    mj_model: mujoco.MjModel,
-    mj_data: mujoco.MjData
-) -> list:
-    
-    for algorithm in algorithms:
-        mjx_data = mjx.put_data(mj_model, mj_data)
-
-    pass
-            
 
 class traj_opt_helper:
 
@@ -83,7 +71,7 @@ class traj_opt_helper:
         task_name = task.__class__.__name__
         base_dir = Path(__file__).parent
         path = os.path.join(base_dir,"data", task_name) + "/"
-        return path
+        return path   
 
     def reset_mjx_data(self):
         """Enhanced reset method that ensures complete state reset"""
