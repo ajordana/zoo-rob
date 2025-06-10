@@ -25,7 +25,7 @@ Caution:
 
 This benchmark can running into determinism issues related to GPU when running CubeRotation and Humaniod tasks (They are contact rich).
 
-This is the result I get from running cube rotation on a CPU:
+This is the result I get when running cube rotation on a CPU:
   0%|          | 1/200 [00:41<2:18:06, 41.64s/it]
 🔥 best index:34 
 🔥 best cost:0.22673562169075012 
@@ -111,6 +111,8 @@ This is the reuslt I get when running cube rotation on a GPU:
 Not deterministic!
 
 Cannot do this as well, this gives some random bug, the values are clearly off.
+It looks like this flag is buggy. https://github.com/jax-ml/jax/issues?q=is%3Aissue%20state%3Aopen%20xla_gpu_deterministic_ops%3Dtrue
+
 os.environ['XLA_FLAGS'] = (
     '--xla_gpu_deterministic_ops=true '
     '--xla_gpu_autotune_level=0' 
