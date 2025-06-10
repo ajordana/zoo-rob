@@ -21,8 +21,21 @@ from functools import partial
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+@staticmethod
+def time_profile(
+    algorithms: list,
+    mj_model: mujoco.MjModel,
+    mj_data: mujoco.MjData
+) -> list:
+    
+    for algorithm in algorithms:
+        mjx_data = mjx.put_data(mj_model, mj_data)
+
+    pass
+            
 
 class traj_opt_helper:
+
     def __init__(
         self,
         name: str,
@@ -37,20 +50,33 @@ class traj_opt_helper:
             f"second horizon."
         )
 
+        print(f'task.dt:{controller.task.dt}; controller.dt:{controller.dt}; '
+            f'task.model.opt.timestep: {controller.task.model.opt.timestep}; '
+            f'task.mj_model.opt.timestep: {controller.task.mj_model.opt.timestep}; '
+            f'simulator mj_model.opt.timestep: {mj_model.opt.timestep}'
+            )
+
         self.warm_up = False
         self.mj_model = mj_model
         self.mj_data = mj_data
         self.controller = controller
+        
+        # Store the original mj_data state for reference
+        self.original_mj_data = copy.deepcopy(mj_data)
+        
         mjx_data = mjx.put_data(self.mj_model, self.mj_data)
         mjx_data = mjx_data.replace(mocap_pos=mj_data.mocap_pos, mocap_quat=mj_data.mocap_quat)
         self.mjx_data = mjx_data
+        
+        # Store the original mjx_data for consistent resets
+        self.original_mjx_data = copy.deepcopy(mjx_data)
+        
         self.viewer = None
         self.controller_name = name
 
         # initialize the controller
         jit_optimize = jax.jit(partial(controller.optimize))
         self.jit_optimize = jit_optimize
-    
 
     @staticmethod
     def get_path(task):
@@ -58,6 +84,17 @@ class traj_opt_helper:
         base_dir = Path(__file__).parent
         path = os.path.join(base_dir,"data", task_name) + "/"
         return path
+
+    def reset_mjx_data(self):
+        """Enhanced reset method that ensures complete state reset"""
+        # Create a fresh mjx_data from the original mj_data
+        mjx_data = mjx.put_data(self.mj_model, self.mj_data)
+        mjx_data = mjx_data.replace(
+            mocap_pos=self.mj_data.mocap_pos, 
+            mocap_quat=self.mj_data.mocap_quat,
+            time=self.mj_data.time  # Ensure time is also reset
+        )
+        self.mjx_data = mjx_data
 
     def __warm_up(self):
         if self.warm_up:
@@ -130,7 +167,7 @@ class traj_opt_helper:
             print("Results saved")
         except Exception as e:
             print(f"Failed to save results: {e}")
-    
+
     def optimize(
         self,
         max_iteration: int = 100,
@@ -138,7 +175,9 @@ class traj_opt_helper:
     ) -> list[list, list, Trajectory]:
 
         knots_list = [] 
-    
+        
+        # self.reset_mjx_data()
+        
         policy_params = self.controller.init_params(seed=seed)
         mean_knots = policy_params.mean 
 
@@ -146,7 +185,8 @@ class traj_opt_helper:
         
         for i in tqdm.tqdm(range(max_iteration)):
             policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
-
+            
+            # self.reset_mjx_data()
             mean_knots = policy_params.mean
             knots_list.append(mean_knots)
 
@@ -155,7 +195,7 @@ class traj_opt_helper:
         print("Optimization done.")
 
         return cost_list, policy_params, rollouts
-    
+
     def get_cost_list(
         self,
         knots_list: list,
@@ -399,7 +439,6 @@ class traj_opt_helper:
         
         # Display the GIF in Jupyter notebook
         from IPython.display import Image, display
-        import base64
         
         # Method 1: Try loading from file
         try:
