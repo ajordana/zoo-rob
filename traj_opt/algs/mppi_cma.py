@@ -3,10 +3,11 @@ from typing import Literal, Tuple
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
-
 from hydrax.alg_base import SamplingBasedController, SamplingParams, Trajectory
 from hydrax.risk import RiskStrategy
 from hydrax.task_base import Task
+
+from evosax.algorithms.distribution_based.cma_es import eigen_decomposition
 
 
 @dataclass
@@ -51,7 +52,7 @@ class MPPI_CMA(SamplingBasedController):
         num_knots: int = 4,
         iterations: int = 1,
         mean_lr: float = 1.0,
-        cov_lr: float = 1.0
+        cov_lr: float = 0.1
     ) -> None:
         """Initialize the controller.
 
@@ -115,9 +116,15 @@ class MPPI_CMA(SamplingBasedController):
             ),
         ) # num_sample x ndims
 
-        L = jnp.linalg.cholesky(params.covariance) # ndims x ndims
+        # Cholesky decomposition
+        # L = jnp.linalg.cholesky(params.covariance) # ndims x ndims
+        # perturbation = jnp.einsum("ij, jk -> ik", noise, L) # perturbation = x_k - x (num_sample x ndims)
 
-        perturbation = jnp.einsum("ij, jk -> ik", noise, L) # perturbation = x_k - x (num_sample x ndims)
+        
+
+        # Eigen decomposition with tricks for numerical stability (from: https://github.com/RobertTLange/evosax/blob/main/evosax/algorithms/distribution_based/cma_es.py)
+        _, B, D = eigen_decomposition(params.covariance)
+        perturbation = (noise @ jnp.diag(D).T) @ B.T 
 
         controls = params.mean + jnp.reshape(perturbation,
                                              (self.num_samples,
@@ -127,6 +134,7 @@ class MPPI_CMA(SamplingBasedController):
 
         return controls, params.replace(rng=rng,
                                         perturbation = perturbation)
+                                        # covariance = C)
 
     def update_params(
         self, params: MPPI_CMA_Params, rollouts: Trajectory
@@ -136,19 +144,18 @@ class MPPI_CMA(SamplingBasedController):
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
         
-        # mean = jnp.sum(weights[:, None, None] * rollouts.knots, axis=0)
-        mean = params.mean + self.mean_lr * jnp.sum(weights[:, None, None] * jnp.reshape(params.perturbation, # eqn 6
+        covariance = (1 - self.cov_lr * jnp.sum(weights)) * params.covariance + self.cov_lr * jnp.sum( # line 5
+            weights[:, None, None] * jnp.einsum("ij, ik -> ijk", params.perturbation, params.perturbation), 
+            axis = 0
+            )
+        
+        mean = params.mean + self.mean_lr * jnp.sum(weights[:, None, None] * jnp.reshape(params.perturbation, # line 6
                                                                                     (self.num_samples,
                                                                                     self.num_knots,
                                                                                     self.task.model.nu)
                                                                                     ),
                                                                                     axis = 0)
-        
-        covariance = (1 - self.cov_lr * jnp.sum(weights)) * params.covariance + self.cov_lr * jnp.sum( # eqn 5
-            weights[:, None, None] * jnp.einsum("ij, ik -> ijk", params.perturbation, params.perturbation), 
-            axis = 0
-            )
-        
-        
+
         return params.replace(mean=mean,
                               covariance = covariance)
+    

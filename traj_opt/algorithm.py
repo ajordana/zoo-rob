@@ -59,7 +59,7 @@ def create_algorithm(
             weights=jnp.ones(task.model.nu * num_knots)/(task.model.nu * num_knots),
             mu_eff=1,
             c_mean=1.0,
-            c_mu=0.5,
+            c_mu=0.25,
             c_std=0,
             d_std=1,
             c_c=0,
@@ -88,8 +88,8 @@ def create_algorithm(
             return fitness
 
         Open_ES_ = partial(
-            Open_ES,                          # ← original constructor / function
-            optimizer=optax.sgd(1.0),         #   these kwargs are now fixed
+            Open_ES,                         
+            optimizer=optax.sgd(0.1),        
             std_schedule=optax.constant_schedule(noise),
             use_antithetic_sampling=False,
             fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
@@ -135,7 +135,7 @@ def create_algorithm(
                 plan_horizon= horizon,
                 spline_type=spline,
                 num_knots=num_knots,
-                learning_rate= 1
+                learning_rate= 0.1
             )
     
     elif name == "MPPI_CMA":
@@ -149,7 +149,21 @@ def create_algorithm(
                 spline_type=spline,
                 num_knots=num_knots,
                 mean_lr= 1.0,
-                cov_lr= 0.5
+                cov_lr= 0.1
+            )
+    
+    elif name == "MPPI_CMA_lr":
+
+        algorithm = MPPI_CMA(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                mean_lr= 0.1,
+                cov_lr= 0.1
             )
         
     elif name == "PredictiveSampling":

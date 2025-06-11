@@ -122,12 +122,7 @@ class MPPI_lr(SamplingBasedController):
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
 
-        mean_1 = jnp.sum(weights[:, None, None] * rollouts.knots, axis=0)
         mean = params.mean + self.learning_rate * jnp.sum(weights[:, None, None] * params.perturbation,
-                                                          axis = 0) # eqn 6
-        
-        diff = jnp.linalg.norm((mean - mean_1), ord=2)
-
-        jax.debug.print("difference of 2 means: {}", diff)
+                                                          axis = 0) # Algorithm 6 line 6
 
         return params.replace(mean=mean)
