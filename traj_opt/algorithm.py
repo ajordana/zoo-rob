@@ -6,6 +6,10 @@ import numpy as np
 from hydrax.algs import Evosax, MPPI, PredictiveSampling
 from hydrax.task_base import Task
 
+from algs.mppi_cma import MPPI_CMA
+from algs.mppi_lr import MPPI_lr
+from algs.mppi import MPPI_copy
+
 from evosax.algorithms.distribution_based import CMA_ES, Open_ES
 from evosax.algorithms.distribution_based.cma_es import Params as CMA_Params   
 from evosax.types import Fitness, Params, Population, State
@@ -54,12 +58,12 @@ def create_algorithm(
             std_max=1e8,
             weights=jnp.ones(task.model.nu * num_knots)/(task.model.nu * num_knots),
             mu_eff=1,
-            c_mean=1,
+            c_mean=1.0,
+            c_mu=0.5,
             c_std=0,
             d_std=1,
             c_c=0,
             c_1=0,
-            c_mu=0.25,
             chi_n=1,
         )
 
@@ -109,6 +113,43 @@ def create_algorithm(
                 plan_horizon= horizon,
                 spline_type=spline,
                 num_knots=num_knots
+            )
+        
+    elif name == "MPPI_cp":
+        algorithm = MPPI_copy(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots
+            )
+    
+    elif name == "MPPI_lr":
+        algorithm = MPPI_lr(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                learning_rate= 1
+            )
+    
+    elif name == "MPPI_CMA":
+
+        algorithm = MPPI_CMA(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                mean_lr= 1.0,
+                cov_lr= 0.5
             )
         
     elif name == "PredictiveSampling":
