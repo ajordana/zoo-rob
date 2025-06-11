@@ -22,7 +22,7 @@ from functools import partial
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-class traj_opt_helper:
+class TrajectoryOptimizer:
 
     def __init__(
         self,
