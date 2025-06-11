@@ -8,7 +8,6 @@ from hydrax.task_base import Task
 
 from algs.mppi_cma import MPPI_CMA
 from algs.mppi_lr import MPPI_lr
-from algs.mppi import MPPI_copy
 
 from evosax.algorithms.distribution_based import CMA_ES, Open_ES
 from evosax.algorithms.distribution_based.cma_es import Params as CMA_Params   
@@ -114,19 +113,8 @@ def create_algorithm(
                 spline_type=spline,
                 num_knots=num_knots
             )
-        
-    elif name == "MPPI_cp":
-        algorithm = MPPI_copy(
-                task,
-                num_samples = num_samples,
-                temperature = temperature,
-                noise_level= noise,
-                plan_horizon= horizon,
-                spline_type=spline,
-                num_knots=num_knots
-            )
     
-    elif name == "MPPI_lr":
+    elif name == "MPPI with lr=0.1":
         algorithm = MPPI_lr(
                 task,
                 num_samples = num_samples,
@@ -138,7 +126,7 @@ def create_algorithm(
                 learning_rate= 0.1
             )
     
-    elif name == "MPPI_CMA":
+    elif name == "MPPI_CMA lr=(1.0, 0.1)":
 
         algorithm = MPPI_CMA(
                 task,
@@ -152,7 +140,7 @@ def create_algorithm(
                 cov_lr= 0.1
             )
     
-    elif name == "MPPI_CMA_lr":
+    elif name == "MPPI_CMA lr=(0.1, 0.1)":
 
         algorithm = MPPI_CMA(
                 task,
