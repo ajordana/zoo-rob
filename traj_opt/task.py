@@ -4,7 +4,6 @@ import jax.numpy as jnp
 
 import mujoco
 from mujoco import mjx
-from hydrax.tasks.cart_pole import CartPole
 from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 from tasks.pusht_unconstrained import PushTUnconstrained
 from tasks.pendulum_unconstrained import PendulumUnconstrained
@@ -14,7 +13,7 @@ from hydrax.tasks.cube import CubeRotation
 from hydrax.tasks.pusht import PushT
 from hydrax.tasks.humanoid_standup import HumanoidStandup
 from hydrax.tasks.humanoid_mocap import HumanoidMocap
-from hydrax.tasks.walker import Walker
+# from hydrax.tasks.walker import Walker
 from hydrax.task_base import Task
 
 
