@@ -147,12 +147,23 @@ class TrajectoryOptimizer:
         # Plot the controls to check their values
         self.plot_controls(best_ctrls)
         
-        try:
-            joblib.dump(cost_array, path + "/" + controller_name + "_costs_trails_average.pkl")
-            joblib.dump(best_params, path + "/" + controller_name + "_trails_best_params.pkl")
-            joblib.dump(best_rollout, path + "/" + controller_name + "_trails_best_rollouts.pkl")
-            joblib.dump(best_ctrls, path + "/" + controller_name + "_trails_best_ctrls.pkl")
-            print("Results saved")
+        try: 
+            stem = str(path + f"/{controller_name}_trails")
+            joblib.dump(cost_array,    stem + "_costs.pkl")
+            joblib.dump(best_params,   stem + "_best_params.pkl")
+            joblib.dump(best_rollout,  stem + "_best_rollouts.pkl")
+            joblib.dump(best_ctrls,    stem + "_best_ctrls.pkl")
+
+            path = os.path.join(base_dir,"figures", task_name)
+
+            np.savez_compressed(
+                str(path + f"/{controller_name}_trails_costs.npz"), 
+                costs=cost_array,
+            )
+  
+
+            print(f'.npz saved')
+
         except Exception as e:
             print(f"Failed to save results: {e}")
 
