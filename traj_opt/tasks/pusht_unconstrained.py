@@ -81,7 +81,7 @@ class PushTUnconstrained(Task):
         close_to_block_cost = jnp.sum(jnp.square(close_to_block_err))
         bound_violation_cost = self._bound_violation(control)
 
-        return 5 * position_cost + orientation_cost + 0.1 * close_to_block_cost + bound_violation_cost
+        return 5 * position_cost + orientation_cost + 0.01 * close_to_block_cost + bound_violation_cost
 
     def terminal_cost(self, state: mjx.Data) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""
