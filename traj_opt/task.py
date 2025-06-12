@@ -97,9 +97,8 @@ def create_task(task_name: str
         task = PushTUnconstrained()
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 1
+        task.mj_model.opt.iterations = 2
         task.mj_model.opt.ls_iterations = 5
-        task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
 
@@ -109,7 +108,6 @@ def create_task(task_name: str
                 timestep=0.02,
                 iterations=2,
                 ls_iterations=5,
-                o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2]),
             )
         )
         mj_model = task.mj_model # Model used by the simulator when visualizing results
