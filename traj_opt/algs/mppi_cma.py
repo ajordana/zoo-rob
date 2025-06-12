@@ -116,12 +116,6 @@ class MPPI_CMA(SamplingBasedController):
             ),
         ) # num_sample x ndims
 
-        # Cholesky decomposition
-        # L = jnp.linalg.cholesky(params.covariance) # ndims x ndims
-        # perturbation = jnp.einsum("ij, jk -> ik", noise, L) # perturbation = x_k - x (num_sample x ndims)
-
-        
-
         # Eigen decomposition with tricks for numerical stability (from: https://github.com/RobertTLange/evosax/blob/main/evosax/algorithms/distribution_based/cma_es.py)
         _, B, D = eigen_decomposition(params.covariance)
         perturbation = (noise @ jnp.diag(D).T) @ B.T 
@@ -134,7 +128,6 @@ class MPPI_CMA(SamplingBasedController):
 
         return controls, params.replace(rng=rng,
                                         perturbation = perturbation)
-                                        # covariance = C)
 
     def update_params(
         self, params: MPPI_CMA_Params, rollouts: Trajectory

@@ -121,7 +121,6 @@ class MPPI_CMA_BD(SamplingBasedController):
         ) # num_sample x num_knots x nu
 
         # Eigen decomposition with tricks for numerical stability (from: https://github.com/RobertTLange/evosax/blob/main/evosax/algorithms/distribution_based/cma_es.py)
-
         _, B, D = self.eigen_decomp_vmap(params.covariance) # B: (num_knots x nu x nu) D: (num_knots x nu)
         
         D_noise = jnp.einsum("ijk, jk -> ijk", noise, D) # num_samples x num_knots x nu
