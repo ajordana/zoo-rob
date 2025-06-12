@@ -41,42 +41,6 @@ def create_algorithm(
 
         algorithm.es_params = algorithm.es_params.replace(std_init = noise)
 
-    elif name == "MPPI-CMA":
-        
-        def lse_fitness_shaping_fn(
-            population: Population, fitness: jax.Array, state: State, params: Params
-            ) -> Fitness:
-            
-            fitness = jax.nn.softmax(-fitness / temperature, axis=0)
-
-            return fitness
-
-        es_params = CMA_Params(
-            std_init=noise,
-            std_min=0.0,
-            std_max=1e8,
-            weights=jnp.ones(task.model.nu * num_knots)/(task.model.nu * num_knots),
-            mu_eff=1,
-            c_mean=1.0,
-            c_mu=0.25,
-            c_std=0,
-            d_std=1,
-            c_c=0,
-            c_1=0,
-            chi_n=1,
-        )
-
-        algorithm = Evosax(
-        task=task,
-        optimizer=CMA_ES,
-        es_params= es_params,
-        num_samples=num_samples,
-        plan_horizon=horizon,
-        spline_type=spline,
-        num_knots=num_knots,
-        fitness_shaping_fn = lse_fitness_shaping_fn
-        )
-
     elif name == "RandomizedSmoothing":
 
         def baseline_subtraction_fitness_shaping_fn(
@@ -114,7 +78,7 @@ def create_algorithm(
                 num_knots=num_knots
             )
     
-    elif name == "MPPI with lr=0.1":
+    elif name == "MPPI lr=0.1":
         algorithm = MPPI_lr(
                 task,
                 num_samples = num_samples,
@@ -163,6 +127,42 @@ def create_algorithm(
                 spline_type= spline,
                 num_knots= num_knots,
             )
+        
+    # elif name == "MPPI-CMA":
+        
+    #     def lse_fitness_shaping_fn(
+    #         population: Population, fitness: jax.Array, state: State, params: Params
+    #         ) -> Fitness:
+            
+    #         fitness = jax.nn.softmax(-fitness / temperature, axis=0)
+
+    #         return fitness
+
+    #     es_params = CMA_Params(
+    #         std_init=noise,
+    #         std_min=0.0,
+    #         std_max=1e8,
+    #         weights=jnp.ones(task.model.nu * num_knots)/(task.model.nu * num_knots),
+    #         mu_eff=1,
+    #         c_mean=1.0,
+    #         c_mu=0.25,
+    #         c_std=0,
+    #         d_std=1,
+    #         c_c=0,
+    #         c_1=0,
+    #         chi_n=1,
+    #     )
+
+    #     algorithm = Evosax(
+    #     task=task,
+    #     optimizer=CMA_ES,
+    #     es_params= es_params,
+    #     num_samples=num_samples,
+    #     plan_horizon=horizon,
+    #     spline_type=spline,
+    #     num_knots=num_knots,
+    #     fitness_shaping_fn = lse_fitness_shaping_fn
+    #     )
     else:
         print(f"{name} is not supported in this benchmark yet")
         raise NotImplementedError
