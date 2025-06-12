@@ -49,15 +49,10 @@ class TrajectoryOptimizer:
         self.mj_data = mj_data
         self.controller = controller
         
-        # Store the original mj_data state for reference
-        self.original_mj_data = copy.deepcopy(mj_data)
         
         mjx_data = mjx.put_data(self.mj_model, self.mj_data)
         mjx_data = mjx_data.replace(mocap_pos=mj_data.mocap_pos, mocap_quat=mj_data.mocap_quat)
         self.mjx_data = mjx_data
-        
-        # Store the original mjx_data for consistent resets
-        self.original_mjx_data = copy.deepcopy(mjx_data)
         
         self.viewer = None
         self.controller_name = name
@@ -183,7 +178,7 @@ class TrajectoryOptimizer:
 
         knots_list = [] 
         
-        # self.reset_mjx_data()
+        self.reset_mjx_data()
         
         policy_params = self.controller.init_params(seed=seed)
         mean_knots = policy_params.mean 
@@ -193,7 +188,7 @@ class TrajectoryOptimizer:
         for _ in tqdm.tqdm(range(max_iteration)):
             policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
             
-            # self.reset_mjx_data()
+            self.reset_mjx_data()
             mean_knots = policy_params.mean
             knots_list.append(mean_knots)
 
