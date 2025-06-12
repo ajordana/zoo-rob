@@ -17,6 +17,8 @@ COLORS = {
     "MPPI lr=0.1": 'r',
     "MPPI_CMA lr=(1.0, 0.1)": 'g',
     "MPPI_CMA lr=(0.1, 0.1)": 'g',
+    "MPPI_CMA_BD lr=(1.0, 0.1)": 'yellow',
+    "MPPI_CMA_BD lr=(0.1, 0.1)": 'yellow',
     "RasndomizedSmoothing lr=0.1": 'b',
     "RasndomizedSmoothing lr=0.01": 'b',
     "RasndomizedSmoothing lr=1": 'b',
@@ -34,6 +36,8 @@ LINESTYLES = {
     "RasndomizedSmoothing lr=1": '-',
     "PredictiveSampling": '-',
     "CMA-ES": '-',
+    "MPPI_CMA_BD lr=(1.0, 0.1)": '-',
+    "MPPI_CMA_BD lr=(0.1, 0.1)": '--',
 }
 
 LABELS = {
@@ -46,6 +50,8 @@ LABELS = {
     "RasndomizedSmoothing lr=1": 'Randomized Smoothing lr=1',
     "PredictiveSampling": 'Predictive Sampling',
     "CMA-ES": 'CMA-ES',
+    "MPPI_CMA_BD lr=(1.0, 0.1)": 'MPPI-CMA Block Diagonal lr=(1.0, 0.1)',
+    "MPPI_CMA_BD lr=(0.1, 0.1)": 'MPPI-CMA Block Diagonal lr=(0.1, 0.1)',
 }
 
 # PDF / PS font embedding for publication-quality output
