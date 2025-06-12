@@ -93,20 +93,22 @@ def create_task(task_name: str
 
     # Hard tasks (contact rich)
     elif task_name == "Walker":
-        # PushT
+        from hydrax.tasks.walker import Walker
         task = WalkerUnconstrained()
+        # task = Walker()
+
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 2
-        task.mj_model.opt.ls_iterations = 5
+        task.mj_model.opt.iterations = 1
+        task.mj_model.opt.ls_iterations = 6
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
         task.model = mjx.put_model(task.mj_model)
         task.model = task.model.replace(
             opt=task.model.opt.replace(
-                timestep=0.02,
-                iterations=2,
-                ls_iterations=5,
+                timestep= 0.02,
+                iterations=1,
+                ls_iterations=6,
             )
         )
         mj_model = task.mj_model # Model used by the simulator when visualizing results
