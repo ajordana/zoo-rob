@@ -8,6 +8,7 @@ from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 from tasks.pusht_unconstrained import PushTUnconstrained
 from tasks.pendulum_unconstrained import PendulumUnconstrained
 from tasks.double_cart_pole_unconstrained import DoubleCartPoleUnconstrained
+from tasks.walker_unconstrained import WalkerUnconstrained
 
 from hydrax.tasks.cube import CubeRotation
 from hydrax.tasks.pusht import PushT
@@ -91,6 +92,27 @@ def create_task(task_name: str
         mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
 
     # Hard tasks (contact rich)
+    elif task_name == "Walker":
+        # PushT
+        task = WalkerUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 2
+        task.mj_model.opt.ls_iterations = 5
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=2,
+                ls_iterations=5,
+            )
+        )
+        mj_model = task.mj_model # Model used by the simulator when visualizing results
+
+        mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
+        
     elif task_name == "PushT":
         # PushT
         task = PushTUnconstrained()
