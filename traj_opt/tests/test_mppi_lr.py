@@ -61,8 +61,8 @@ def test_consistency():
         params_mppi_lr, _ = mppi_lr_jit_opt(state, params_mppi_lr)
         params_mppi, _ = mppi_jit_opt(state, params_mppi)
 
-        print(f"MPPI mean:{params_mppi.mean}")
-        print(f"MPPI_lr mean:{params_mppi_lr.mean}")
+        # print(f"MPPI mean:{params_mppi.mean}")
+        # print(f"MPPI_lr mean:{params_mppi_lr.mean}")
 
         assert jnp.all(jnp.abs(params_mppi.mean - params_mppi_lr.mean) < 1e-6)
 

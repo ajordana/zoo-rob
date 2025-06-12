@@ -65,10 +65,10 @@ def test_consistency():
         params_mppi_cma, _ = mppi_cma_jit_opt(state, params_mppi_cma)
         params_mppi, _ = mppi_jit_opt(state, params_mppi)
 
-        print(f"MPPI mean:{params_mppi.mean}")
-        print(f"MPPI_CMA mean:{params_mppi_cma.mean}")
+        # print(f"MPPI mean:{params_mppi.mean}")
+        # print(f"MPPI_CMA mean:{params_mppi_cma.mean}")
 
-        print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma.mean)}")
+        # print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma.mean)}")
         assert jnp.all(jnp.abs(params_mppi.mean - params_mppi_cma.mean) < 1e-6)
 
     print("MPPI_CMA is consistent with MPPI from Hydrax")
