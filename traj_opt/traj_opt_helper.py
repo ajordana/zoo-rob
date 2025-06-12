@@ -146,7 +146,15 @@ class TrajectoryOptimizer:
 
         # Plot the controls to check their values
         self.plot_controls(best_ctrls)
-        
+
+        figure_path = os.path.join(base_dir,"figures", task_name)
+
+        try:
+            os.makedirs(figure_path, exist_ok=True)
+            print(f"path created: {figure_path}")
+        except Exception as e:
+            print(f'failed to crate path: {e}')
+
         try: 
             stem = str(path + f"/{controller_name}_trails")
             joblib.dump(cost_array,    stem + "_costs.pkl")
@@ -154,14 +162,12 @@ class TrajectoryOptimizer:
             joblib.dump(best_rollout,  stem + "_best_rollouts.pkl")
             joblib.dump(best_ctrls,    stem + "_best_ctrls.pkl")
 
-            path = os.path.join(base_dir,"figures", task_name)
 
             np.savez_compressed(
-                str(path + f"/{controller_name}_trails_costs.npz"), 
+                str(figure_path + f"/{controller_name}_trails_costs.npz"), 
                 costs=cost_array,
             )
   
-
             print(f'.npz saved')
 
         except Exception as e:
@@ -182,7 +188,7 @@ class TrajectoryOptimizer:
 
         knots_list.append(mean_knots)
         
-        for i in tqdm.tqdm(range(max_iteration)):
+        for _ in tqdm.tqdm(range(max_iteration)):
             policy_params, rollouts = self.jit_optimize(self.mjx_data, policy_params)
             
             # self.reset_mjx_data()
