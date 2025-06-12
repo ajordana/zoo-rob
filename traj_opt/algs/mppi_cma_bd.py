@@ -124,8 +124,6 @@ class MPPI_CMA_BD(SamplingBasedController):
 
         _, B, D = self.eigen_decomp_vmap(params.covariance) # B: (num_knots x nu x nu) D: (num_knots x nu)
         
-        jax.debug.print("B:{}; D:{}", B.shape, D.shape)
-
         D_noise = jnp.einsum("ijk, jk -> ijk", noise, D) # num_samples x num_knots x nu
 
         perturbation = jnp.einsum("ijk, jkl -> ijl", D_noise, B) # num_samples x num_knots x nu
