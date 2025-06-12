@@ -103,7 +103,8 @@ class TrajectoryOptimizer:
 
     def trails( self,
         max_iteration: int = 100,
-        num_trails: int = 6) -> None:
+        num_trails: int = 6,
+        save_npz:bool = False) -> None:
 
         print(f"Controller dt: {self.controller.dt}")
         print(f"Simulator dt: {self.mj_model.opt.timestep}")
@@ -161,14 +162,15 @@ class TrajectoryOptimizer:
             joblib.dump(best_params,   stem + "_best_params.pkl")
             joblib.dump(best_rollout,  stem + "_best_rollouts.pkl")
             joblib.dump(best_ctrls,    stem + "_best_ctrls.pkl")
+        
+            if save_npz:
 
-
-            np.savez_compressed(
-                str(figure_path + f"/{controller_name}_trails_costs.npz"), 
-                costs=cost_array,
-            )
+                np.savez_compressed(
+                    str(figure_path + f"/{controller_name}_trails_costs.npz"), 
+                    costs=cost_array,
+                )
   
-            print(f'.npz saved')
+                print(f'.npz saved')
 
         except Exception as e:
             print(f"Failed to save results: {e}")
