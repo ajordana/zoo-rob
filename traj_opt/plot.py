@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
-import joblib
 from pathlib import Path
 import os
-from traj_opt_helper import TrajectoryOptimizer
 
 # ─── reference-style constants ──────────────────────────────────────────────────
 CAPSIZE     = 5
@@ -16,29 +14,32 @@ LINEWIDTH   = 4
 
 COLORS = {
     "MPPI": 'r',
-    "MPPI_CMA lr=(1.0, 0.1)": 'g',
-    "RandomizedSmoothing": "b",
     "MPPI lr=0.1": 'r',
+    "MPPI_CMA lr=(1.0, 0.1)": 'g',
     "MPPI_CMA lr=(0.1, 0.1)": 'g',
-    "PredictiveSampling": 'purple'
+    "RandomizedSmoothing": "b",
+    "PredictiveSampling": 'purple',
+    "CMA-ES": 'orange'
 }
 
 LINESTYLES = {
     "MPPI": '-',
-    "MPPI_CMA lr=(1.0, 0.1)": '-',
-    "RandomizedSmoothing": '-',
     "MPPI lr=0.1": '--',
+    "MPPI_CMA lr=(1.0, 0.1)": '-',
     "MPPI_CMA lr=(0.1, 0.1)": '--',
+    "RandomizedSmoothing": '-',
     "PredictiveSampling": '-',
+    "CMA-ES": '-',
 }
 
 LABELS = {
     "MPPI": 'MPPI',
-    "MPPI_CMA lr=(1.0, 0.1)": 'MPPI-CMA lr=(1.0, 0.1)',
-    "RandomizedSmoothing": 'Randomized Smoothing lr=0.1',
     "MPPI lr=0.1": 'MPPI lr=0.1',
+    "MPPI_CMA lr=(1.0, 0.1)": 'MPPI-CMA lr=(1.0, 0.1)',
     "MPPI_CMA lr=(0.1, 0.1)": 'MPPI-CMA lr=(0.1, 0.1)',
-    "PredictiveSampling": ' PredictiveSampling',
+    "RandomizedSmoothing": 'Randomized Smoothing lr=0.1',
+    "PredictiveSampling": 'Predictive Sampling',
+    "CMA-ES": 'CMA-ES',
 }
 
 # PDF / PS font embedding for publication-quality output
@@ -47,7 +48,7 @@ matplotlib.rcParams["ps.fonttype"]  = 42
 
 from matplotlib.ticker import FuncFormatter
 def sci_format(x,lim):
-    return '{:1.0e}'.format(x)
+    return '{:10.0e}'.format(x)
 MAJOR_FORMATTER = FuncFormatter(sci_format)
 
 def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True):
@@ -60,19 +61,21 @@ def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True)
     print("└──────────────────────────────────────────────┘")
 
     # ── load data ───────────────────────────────────────────────────────────────
-    results_dir = Path(TrajectoryOptimizer.get_path(task))
-    print(f"Results directory: {results_dir}")
+    task_name = task.__class__.__name__
+    base_dir    = Path(__file__).parent
+    results_dir = os.path.join(base_dir, "figures", task_name) + "/"
 
     methods = {}
+    dir_path = Path(results_dir)                                    # ← use Path once
+
+
     for alg in algorithms:
-        f = results_dir / f"{alg}_costs_trails_average.pkl"
+        f = dir_path / f"{alg}_trails_costs.npz"                   # ← load .npz
         try:
-            methods[alg] = np.asarray(joblib.load(f))      # (n_trials, n_iters)
+            with np.load(f) as data:                               # ← np.load
+                methods[alg] = np.asarray(data["costs"])           # (n_trials, n_iters)
         except FileNotFoundError:
             print(f"[warn] {f.name} not found; skipping.")
-
-    if not methods:
-        raise RuntimeError("No cost files loaded — nothing to plot.")
 
     # ── create figure ──────────────────────────────────────────────────────────
     fig, ax = plt.subplots(
@@ -116,20 +119,19 @@ def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True)
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(
         handles, labels,
-        loc='upper left',
-        bbox_to_anchor=(0.10, 1.0),
+        loc='upper right',
         prop={'size': FONTSIZE},
         framealpha=0.95
     )
 
     fig.align_ylabels()   # keeps y-labels aligned if the layout changes
-    
+
     if save:
         # ── save figure ────────────────────────────────────────────────────────────
-        out_dir = Path.cwd() / "figures" / task.__class__.__name__
+        out_dir = Path.cwd() / "figures" / task_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        out_path = out_dir / f"{task.__class__.__name__}_Convergence.png"
+        out_path = out_dir / f"{task_name}_Convergence.pdf"
         fig.savefig(out_path, dpi=300, bbox_inches="tight")
         print(f"Figure saved to: {out_path}")
 
