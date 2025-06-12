@@ -8,9 +8,9 @@ from hydrax.task_base import Task
 
 from algs.mppi_cma import MPPI_CMA
 from algs.mppi_lr import MPPI_lr
+from algs.mppi_cma_bd import MPPI_CMA_BD
 
 from evosax.algorithms.distribution_based import CMA_ES, Open_ES
-from evosax.algorithms.distribution_based.cma_es import Params as CMA_Params   
 from evosax.types import Fitness, Params, Population, State
 
 import optax
@@ -158,6 +158,34 @@ def create_algorithm(
     elif name == "MPPI_CMA lr=(0.1, 0.1)":
 
         algorithm = MPPI_CMA(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                mean_lr= 0.1,
+                cov_lr= 0.1
+            )
+        
+    elif name == "MPPI_CMA_BD lr=(1.0, 0.1)":
+
+        algorithm = MPPI_CMA_BD(
+                task,
+                num_samples = num_samples,
+                temperature = temperature,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                mean_lr= 1.0,
+                cov_lr= 0.1
+            )
+    
+    elif name == "MPPI_CMA_BD lr=(0.1, 0.1)":
+
+        algorithm = MPPI_CMA_BD(
                 task,
                 num_samples = num_samples,
                 temperature = temperature,
