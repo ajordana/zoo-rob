@@ -28,8 +28,8 @@ class WalkerUnconstrained(Task):
             mj_model, mujoco.mjtObj.mjOBJ_SENSOR, "torso_zaxis"
         )
 
-        self.ub = [1., 1., 1., 1., 1., 1.]
-        self.ub = [-1., -1., -1., -1., -1., -1.]
+        self.ub = jnp.array([1., 1., 1., 1., 1., 1.])
+        self.lb = jnp.array([-1., -1., -1., -1., -1., -1.])
 
         # Set the target velocity (m/s) and height
         # TODO: make these parameters
@@ -46,7 +46,7 @@ class WalkerUnconstrained(Task):
         upper = jnp.maximum(ctrl - self.ub, 0)   # only where A is above ub
         v = lower + upper                # violation vector
 
-        penalty = 50 * jnp.linalg.norm(v, ord)
+        penalty = 100 * jnp.linalg.norm(v, ord)
 
         # if penalty != 0 then add 1, else leave as 0: 
         penalty = jnp.where(penalty != 0, penalty + 1, penalty)
