@@ -17,7 +17,9 @@ COLORS = {
     "MPPI lr=0.1": 'r',
     "MPPI_CMA lr=(1.0, 0.1)": 'g',
     "MPPI_CMA lr=(0.1, 0.1)": 'g',
-    "RandomizedSmoothing": "b",
+    "RasndomizedSmoothing lr=0.1": 'b',
+    "RasndomizedSmoothing lr=0.01": 'b',
+    "RasndomizedSmoothing lr=1": 'b',
     "PredictiveSampling": 'purple',
     "CMA-ES": 'orange'
 }
@@ -27,7 +29,9 @@ LINESTYLES = {
     "MPPI lr=0.1": '--',
     "MPPI_CMA lr=(1.0, 0.1)": '-',
     "MPPI_CMA lr=(0.1, 0.1)": '--',
-    "RandomizedSmoothing": '-',
+    "RasndomizedSmoothing lr=0.1": '-',
+    "RasndomizedSmoothing lr=0.01": '-',
+    "RasndomizedSmoothing lr=1": '-',
     "PredictiveSampling": '-',
     "CMA-ES": '-',
 }
@@ -37,7 +41,9 @@ LABELS = {
     "MPPI lr=0.1": 'MPPI lr=0.1',
     "MPPI_CMA lr=(1.0, 0.1)": 'MPPI-CMA lr=(1.0, 0.1)',
     "MPPI_CMA lr=(0.1, 0.1)": 'MPPI-CMA lr=(0.1, 0.1)',
-    "RandomizedSmoothing": 'Randomized Smoothing lr=0.1',
+    "RasndomizedSmoothing lr=0.1": 'Randomized Smoothing lr=0.1',
+    "RasndomizedSmoothing lr=0.01": 'Randomized Smoothing lr=0.01',
+    "RasndomizedSmoothing lr=1": 'Randomized Smoothing lr=1',
     "PredictiveSampling": 'Predictive Sampling',
     "CMA-ES": 'CMA-ES',
 }
