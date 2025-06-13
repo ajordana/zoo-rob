@@ -136,6 +136,12 @@ class MPPI_CMA(SamplingBasedController):
         costs = jnp.sum(rollouts.costs, axis=1)  # sum over time steps
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
+
+        clipped_perturbation = jnp.reshape((rollouts.knots - params.mean),
+                                           (self.num_samples,
+                                            self.ndims)
+        )
+        params = params.replace(perturbation = clipped_perturbation) # Set to clipped perturbations
         
         covariance = (1 - self.cov_lr * jnp.sum(weights)) * params.covariance + self.cov_lr * jnp.sum( # line 5
             weights[:, None, None] * jnp.einsum("ij, ik -> ijk", params.perturbation, params.perturbation), 

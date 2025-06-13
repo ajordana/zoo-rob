@@ -107,7 +107,8 @@ class MPPI_lr(SamplingBasedController):
                 self.task.model.nu,
             ),
         )
-
+        
+        
         perturbation = self.noise_level * noise # perturbation = x_k - x
         controls = params.mean + perturbation
 
@@ -122,6 +123,13 @@ class MPPI_lr(SamplingBasedController):
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
 
+        clipped_perturbation = jnp.reshape((rollouts.knots - params.mean),
+                                           (self.num_samples,
+                                            self.num_knots,
+                                            self.task.model.nu)
+                )
+        params = params.replace(perturbation = clipped_perturbation) # Set to clipped perturbations
+        
         mean = params.mean + self.learning_rate * jnp.sum(weights[:, None, None] * params.perturbation,
                                                           axis = 0) # Algorithm 6 line 6
 

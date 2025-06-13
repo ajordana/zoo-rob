@@ -140,6 +140,13 @@ class MPPI_CMA_BD(SamplingBasedController):
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
         
+        clipped_perturbation = jnp.reshape((rollouts.knots - params.mean),
+                                           (self.num_samples,
+                                            self.num_knots,
+                                            self.task.model.nu)
+                )
+        params = params.replace(perturbation = clipped_perturbation) # Set to clipped perturbations
+
         perturbation_outer = jnp.einsum("ijk, ijl-> ijkl", params.perturbation, params.perturbation) # num_samples x num_knots x nu x nu
 
         covariance = (1 - self.cov_lr * jnp.sum(weights)) * params.covariance + self.cov_lr * jnp.sum(
