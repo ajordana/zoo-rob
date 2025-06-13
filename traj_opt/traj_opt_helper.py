@@ -75,7 +75,9 @@ class TrajectoryOptimizer:
         mjx_data = mjx_data.replace(
             mocap_pos=self.mj_data.mocap_pos, 
             mocap_quat=self.mj_data.mocap_quat,
-            time=self.mj_data.time  # Ensure time is also reset
+            time=self.mj_data.time,  # Ensure time is also reset
+            qpos = self.mj_data.qpos,
+            qvel = self.mj_data.qvel
         )
         self.mjx_data = mjx_data
 
