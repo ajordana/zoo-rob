@@ -364,15 +364,16 @@ class TrajectoryOptimizer:
     def __reset_tmp_data(self):
         self.tmp_mj_data.qpos[:] = self.mj_data.qpos
         self.tmp_mj_data.qvel[:] = self.mj_data.qvel
-            
+
     def visualize_rollout_gif(
         self,
-        task, 
+        task,
         controller_name: str,
         fps: int = None,
         width: int = 480,
         height: int = 480,
         camera_id: int = -1,
+        show_reference: bool = False,
     ) -> IPyImage:
         """
         Renders the rollout for the named controller into a GIF and returns it.
@@ -380,21 +381,45 @@ class TrajectoryOptimizer:
         data/<TaskName>/<controller_name>_trails_best_ctrls.pkl
         GIF is written to:
         data/<TaskName>/<controller_name>.gif
+        
+        Args:
+            task: The task instance
+            controller_name: Name of the controller
+            fps: Frame rate for the GIF
+            width: Width of the rendered frames
+            height: Height of the rendered frames
+            camera_id: Camera ID to use for rendering
+            reference: Reference trajectory (qs) to visualize as ghost
+            reference_fps: Frame rate of the reference trajectory
         """
         # locate the folder exactly as visualize_rollout does
         task_name = task.__class__.__name__
-        base_dir  = Path(__file__).parent
-        path      = os.path.join(base_dir, "data", task_name)
-
+        base_dir = Path(__file__).parent
+        path = os.path.join(base_dir, "data", task_name)
         pkl_file = os.path.join(path, f"{controller_name}_trails_best_ctrls.pkl")
         controls = joblib.load(pkl_file)
-
+        
         # prepare temporary data for rendering
         self.__create_temporary_viewer()
         data = self.tmp_mj_data
         
+
+        reference = None
+
         # Reset to initial state
         self.__reset_tmp_data()
+        if show_reference:
+            reference = task.reference
+            reference_fps = task.reference_fps
+        
+        # Ghost reference setup
+        ref_data = None
+        
+        if reference is not None:
+            ref_data = mujoco.MjData(self.mj_model)
+            assert reference.shape[1] == self.mj_model.nq, f"Reference qpos dimension mismatch: expected {self.mj_model.nq}, got {reference.shape[1]}"
+            ref_data.qpos[:] = reference[0, :]
+            mujoco.mj_forward(self.mj_model, ref_data)
         
         # Create renderer using the modern MuJoCo API
         renderer = mujoco.Renderer(self.mj_model, height=height, width=width)
@@ -402,48 +427,81 @@ class TrajectoryOptimizer:
         # Set camera (if specified)
         if camera_id >= 0:
             renderer.enable_camera_id = camera_id
-
-        # Calculate proper FPS - default to 30 FPS for smooth playback
+        
+        # Calculate proper FPS - default to 60 FPS for smooth playbook
         dt = float(self.mj_model.opt.timestep)
         if fps is None:
-            # Use 30 FPS by default for smooth visualization
-            # If you want real-time speed, use: fps = int(1.0 / dt)
             fps = 60
-
+        
         frames = []
+        current_time = 0.0
         
         try:
-            for u in controls:
+            for step_idx, u in enumerate(controls):
                 data.ctrl[:] = u
                 mujoco.mj_step(self.mj_model, data)
+                current_time += dt
+                
+                # Update ghost reference if provided
+                if reference is not None and ref_data is not None:
+                    # Calculate reference index based on current simulation time
+                    t_ref = current_time * reference_fps
+                    i_ref = int(t_ref)
+                    i_ref = min(i_ref, reference.shape[0] - 1)
+                    
+                    # Update ghost reference pose
+                    ref_data.qpos[:] = reference[i_ref]
+                    mujoco.mj_forward(self.mj_model, ref_data)
                 
                 # Update scene and render
                 renderer.update_scene(data)
-                img = renderer.render()
+                
+                # If we have a ghost reference, we need to render it separately
+                # and composite the images
+                if reference is not None and ref_data is not None:
+                    # Render the main scene
+                    main_img = renderer.render()
+                    
+                    # Create a separate renderer for the ghost
+                    ghost_renderer = mujoco.Renderer(self.mj_model, height=height, width=width)
+                    if camera_id >= 0:
+                        ghost_renderer.enable_camera_id = camera_id
+                    
+                    # Simply update the ghost renderer with the ghost data
+                    ghost_renderer.update_scene(ref_data)
+                    ghost_img = ghost_renderer.render()
+                    ghost_renderer.close()
+                    
+                    # Simple alpha blending (you may want to adjust alpha value)
+                    alpha = 0.3  # Ghost transparency
+                    blended_img = (1 - alpha) * main_img.astype(np.float32) + alpha * ghost_img.astype(np.float32)
+                    img = np.clip(blended_img, 0, 255).astype(np.uint8)
+                else:
+                    img = renderer.render()
+                
                 frames.append(img)
                 
         finally:
             # Always close the renderer to free resources
             renderer.close()
-
+        
         # ensure output dir and write GIF with looping
-        os.makedirs(path, exist_ok=True) 
+        path = os.path.join(base_dir, "figures", task_name)
+
         gif_path = os.path.join(path, f"{controller_name}.gif")
         
         # Save GIF with infinite looping and proper duration
         imageio.mimsave(
-            gif_path, 
-            frames, 
+            gif_path,
+            frames,
             fps=fps,
             loop=0,  # 0 means infinite loop
             duration=1.0/fps  # Ensure consistent frame timing
         )
-        
         print(f"GIF saved to: {gif_path}")
         
         # Display the GIF in Jupyter notebook
         from IPython.display import Image, display
-        
         # Method 1: Try loading from file
         try:
             gif_image = Image(filename=gif_path)
@@ -452,6 +510,6 @@ class TrajectoryOptimizer:
             # Method 2: Load as base64 data (more reliable)
             with open(gif_path, 'rb') as f:
                 gif_data = f.read()
-            
             gif_image = Image(data=gif_data, format='gif')
             return gif_image
+    
