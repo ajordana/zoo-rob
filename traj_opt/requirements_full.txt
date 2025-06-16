@@ -1,0 +1,7 @@
+# Direct git dependencies (installed without deps)
+--no-deps git+https://github.com/vincekurtz/hydrax@63c715d#egg=hydrax
+--no-deps evosax==0.2.0
+
+# Regular dependencies
+-r requirements.txt
+--extra-index-url https://storage.googleapis.com/jax_releases/jax_cuda_releases.html
