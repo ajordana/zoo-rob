@@ -1,4 +1,0 @@
-[submodule "external/hydrax"]
-	path = external/hydrax
-	url = https://github.com/JianghanZHang/hydrax.git
-	branch = update_evosax
