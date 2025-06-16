@@ -22,12 +22,17 @@ conda install pip
 
 cd traj_opt
 
-pip install -r requirements-full.txt
+# Direct git dependencies (installed without deps)
+pip install --no-deps git+https://github.com/vincekurtz/hydrax@63c715d#egg=hydrax
+pip install --no-deps evosax==0.2.0
+
+pip install -r requirements.txt --extra-index-url https://storage.googleapis.com/jax_releases/jax_cuda_releases.html
+
 ```
 
 Run Hydrax's unittest suite
 
-'''bash
+```bash
 tmpdir=$(mktemp -d)
 git clone https://github.com/vincekurtz/hydrax.git "$tmpdir"
 git -C "$tmpdir" checkout 63c715d
@@ -36,27 +41,27 @@ pip install pytest
 pytest -q "$tmpdir/tests" # run Hydrax's test suite
 
 rm -rf "$tmpdir"
-'''
+```
 
 Test determinism of rollouts on GPU
 
-'''bash
+```bash
 
 pytest tests/test_deterministic_rollouts_gpu.py 
 
-'''
+```
 
 (Optionally) Test MPPI with learning rate, MPPI-CMA, MPPI-CMA-BlockDiagonal
 
-'''bash
+```bash
 
 pytest --ignore=tests/test_deterministic_rollouts_gpu.py 
 
-'''
+```
 
 # Note
 
 For the reproducibility of benchmarks, we need mjx to be determinstic. 
 
-Determinsism can be enforced using this flag: '''bash --xla_gpu_deterministic_ops=true '''. 
+Determinsism can be enforced using this flag: ```bash --xla_gpu_deterministic_ops=true ```. 
 However, the flag only works as expected with mjx under jax <= 0.4.34, which conflicts the version pinned by Hydrax and Evosax. So we need to test hydrax after installing jax <= 0.4.34.
