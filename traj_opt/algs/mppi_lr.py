@@ -127,7 +127,8 @@ class MPPI_lr(SamplingBasedController):
                                            (self.num_samples,
                                             self.num_knots,
                                             self.task.model.nu)
-                )
+                            )
+        
         params = params.replace(perturbation = clipped_perturbation) # Set to clipped perturbations
         
         mean = params.mean + self.learning_rate * jnp.sum(weights[:, None, None] * params.perturbation,
