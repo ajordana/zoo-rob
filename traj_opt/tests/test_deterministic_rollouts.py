@@ -6,6 +6,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from mujoco import mjx
+from hydrax.alg_base import Trajectory
 
 from hydrax.tasks.humanoid_standup import HumanoidStandup       # ← lighter-weight than Humanoid
 from hydrax.algs import PredictiveSampling

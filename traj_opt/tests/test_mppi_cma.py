@@ -1,29 +1,27 @@
 import jax.numpy as jnp
 import jax
 
-from mujoco import mjx
-from hydrax.algs import MPPI
-from hydrax.tasks.cart_pole import CartPole
-
-import sys
 import os
 
-# IMPORTANT: avoid nondeterminsitc behavior from GPU
+# Test on CPU for higher precision
 jax.config.update("jax_platform_name", "cpu") 
 os.environ['XLA_FLAGS'] = (
     '--xla_gpu_deterministic_ops=true '
     '--xla_gpu_autotune_level=0' 
 )
+from mujoco import mjx
+from hydrax.algs import MPPI
 
+import sys
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 from algs.mppi_cma import MPPI_CMA
-
+from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 
 
 
 def test_consistency():
-    task = CartPole()
+    task = CartPoleUnconstrained()
 
     mppi_cma = MPPI_CMA(
         task = task,
@@ -65,11 +63,12 @@ def test_consistency():
         params_mppi_cma, _ = mppi_cma_jit_opt(state, params_mppi_cma)
         params_mppi, _ = mppi_jit_opt(state, params_mppi)
 
-        # print(f"MPPI mean:{params_mppi.mean}")
-        # print(f"MPPI_CMA mean:{params_mppi_cma.mean}")
+        print(f"MPPI mean:{params_mppi.mean}")
+        print(f"MPPI_CMA mean:{params_mppi_cma.mean}")
 
-        # print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma.mean)}")
+        print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma.mean)}")
         assert jnp.all(jnp.abs(params_mppi.mean - params_mppi_cma.mean) < 1e-6)
+
 
     print("MPPI_CMA is consistent with MPPI from Hydrax")
 

@@ -7,20 +7,20 @@ from hydrax.tasks.cart_pole import CartPole
 
 import sys
 import os
-
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, parent_dir)
-from algs.mppi_lr import MPPI_lr
-
-# IMPORTANT: avoid nondeterminsitc behavior from GPU
+# Test on CPU for higher precision
 jax.config.update("jax_platform_name", "cpu") 
 os.environ['XLA_FLAGS'] = (
     '--xla_gpu_deterministic_ops=true '
     '--xla_gpu_autotune_level=0' 
 )
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+from algs.mppi_lr import MPPI_lr
+from tasks.cart_pole_unconstrained import CartPoleUnconstrained
+
 
 def test_consistency():
-    task = CartPole()
+    task = CartPoleUnconstrained()
 
     mppi_lr = MPPI_lr(
         task = task,

@@ -5,21 +5,21 @@ from mujoco import mjx
 from hydrax.algs import MPPI
 from hydrax.tasks.cart_pole import CartPole
 from hydrax.tasks.pusht import PushT
+from hydrax.alg_base import Trajectory
 
 import sys
 import os
-
-# IMPORTANT: avoid nondeterminsitc behavior from GPU
+# Test on CPU for higher precision
 jax.config.update("jax_platform_name", "cpu") 
 os.environ['XLA_FLAGS'] = (
     '--xla_gpu_deterministic_ops=true '
     '--xla_gpu_autotune_level=0' 
 )
-
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 from algs.mppi_cma_bd import MPPI_CMA_BD
 from evosax.algorithms.distribution_based.cma_es import eigen_decomposition
+from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 
 # ---------------------------------------------------------------------
 # reference (unrolled) helpers – used only inside this test
@@ -94,55 +94,56 @@ def unroll_update(ctrl, params, rollouts):
     return params.replace(mean=mean_new, covariance=cov_new)
 
 
-
 def test_vectorization():
     # small sizes keep the test quick
-    task = PushT()
+    task = CartPoleUnconstrained()
     ctrl = MPPI_CMA_BD(
-        task           = task,
-        num_samples    = 128,
-        noise_level    = 0.1,
-        temperature    = 1.0,
-        plan_horizon   = 1.0,
-        spline_type    = "zero",
-        num_knots      = 3,
-        mean_lr        = 1.0,
-        cov_lr         = 0.1,
-        seed           = 123,
+        task = task,
+        num_samples = 128,
+        noise_level = 0.1,
+        temperature = 1.0,
+        plan_horizon = 1.0,
+        spline_type = "zero",
+        num_knots = 3,
+        mean_lr = 1.0,
+        cov_lr = 0.1,
+        seed = 123,
     )
-
+    
     # ------------- sample_knots --------------------------------------
     params0 = ctrl.init_params()
-    controls_vec, params1 = ctrl.sample_knots(params0)           # vectorised
+    controls_vec, params1 = ctrl.sample_knots(params0) # vectorised
     controls_ref, params1_ref = unroll_sample_knots(ctrl, params0)
-
     assert jnp.allclose(controls_vec, controls_ref, atol=1e-6, rtol=1e-6)
     assert jnp.allclose(params1.perturbation,
                         params1_ref.perturbation,
                         atol=1e-6, rtol=1e-6)
-
     print(f"unrolled sampling == vectorized sampling")
-    # ------------- update_params -------------------------------------
-    horizon  = 4
-    rng_cost = jax.random.PRNGKey(999)
-    dummy_costs = jax.random.normal(rng_cost, (ctrl.num_samples, horizon))
-
-    Rollout = type("Rollout", (), {})           # simple container
-    rollouts = Rollout()
-    rollouts.costs = dummy_costs
-
-    params_vec = ctrl.update_params(params1,       rollouts)     # vectorised
-    params_ref = unroll_update(ctrl, params1_ref, rollouts)      # unrolled
     
-    assert jnp.allclose(params_vec.mean,      params_ref.mean,
+    # ------------- update_params -------------------------------------
+    mjx_data = mjx.make_data(task.model)
+    
+    controls_clipped = jnp.clip(controls_vec, task.u_min, task.u_max)
+    
+    rng_rollout = jax.random.PRNGKey(999)
+    rollouts = ctrl.rollout_with_randomizations(
+        mjx_data,  # mjx.Data object created from task.model
+        params1.tk, 
+        controls_clipped, 
+        rng_rollout
+    )
+    
+    params_vec = ctrl.update_params(params1, rollouts) # vectorised
+    params_ref = unroll_update(ctrl, params1_ref, rollouts) # unrolled
+    
+    assert jnp.allclose(params_vec.mean, params_ref.mean,
                         atol=1e-6, rtol=1e-6)
     assert jnp.allclose(params_vec.covariance, params_ref.covariance,
                         atol=1e-6, rtol=1e-6)
     print(f"unrolled update == vectorized update")
-    
 
 def test_consistency():
-    task = CartPole()
+    task = CartPoleUnconstrained()
 
     mppi_cma_bd = MPPI_CMA_BD(
         task = task,
@@ -184,10 +185,10 @@ def test_consistency():
         params_mppi_cma_bd, _ = mppi_cma_bd_jit_opt(state, params_mppi_cma_bd)
         params_mppi, _ = mppi_jit_opt(state, params_mppi)
 
-        # print(f"MPPI mean:{params_mppi.mean}")
-        # print(f"mppi_cma_bd mean:{params_mppi_cma_bd.mean}")
+        print(f"MPPI mean:{params_mppi.mean}")
+        print(f"mppi_cma_bd mean:{params_mppi_cma_bd.mean}")
 
-        # print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma_bd.mean)}")
+        print(f"Difference: {jnp.abs(params_mppi.mean - params_mppi_cma_bd.mean)}")
         assert jnp.all(jnp.abs(params_mppi.mean - params_mppi_cma_bd.mean) < 1e-6)
 
     print("mppi_cma_bd is consistent with MPPI from Hydrax")
