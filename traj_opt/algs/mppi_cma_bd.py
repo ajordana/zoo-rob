@@ -139,7 +139,7 @@ class MPPI_CMA_BD(SamplingBasedController):
         costs = jnp.sum(rollouts.costs, axis=1)  # sum over time steps
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
-        
+
         clipped_perturbation = jnp.reshape((rollouts.knots - params.mean),
                                            (self.num_samples,
                                             self.num_knots,

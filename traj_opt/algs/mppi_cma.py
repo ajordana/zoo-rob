@@ -142,9 +142,11 @@ class MPPI_CMA(SamplingBasedController):
                                             self.ndims)
         )
         params = params.replace(perturbation = clipped_perturbation) # Set to clipped perturbations
+
+        perturbation_outer = jnp.einsum("ij, ik-> ijk", params.perturbation, params.perturbation)
         
         covariance = (1 - self.cov_lr * jnp.sum(weights)) * params.covariance + self.cov_lr * jnp.sum( # line 5
-            weights[:, None, None] * jnp.einsum("ij, ik -> ijk", params.perturbation, params.perturbation), 
+            weights[:, None, None] * perturbation_outer, 
             axis = 0
             )
         
