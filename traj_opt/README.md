@@ -4,11 +4,13 @@ This benchmark evaluates sampling-based trajectory optimization algorithms using
 - [Hydrax](https://github.com/vincekurtz/hydrax) - JAX-based trajectory optimization
 - [Evosax](https://github.com/RobertTLange/evosax) - Evolution strategies library
 
-## Humanoid Balancing Visualizations
+## Visualizations of open-loop trajectory optimiztion solutions
 
 | MPPI | MPPI-CMA | MPPI-CMA Block Diagonal |
 |:----:|:-------------:|:------------------:|
 | ![MPPI Results](figures/HumanoidMocap/MPPI.gif) | ![MPPI CMA Results](figures/HumanoidMocap/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/HumanoidMocap/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
+| ![MPPI Results](figures/PushTUnconstrained/MPPI.gif) | ![MPPI CMA Results](figures/PushTUnconstrained/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/PushTUnconstrained/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
+| ![MPPI Results](figures/CartPoleUnconstrained/MPPI.gif) | ![MPPI CMA Results](figures/CartPoleUnconstrained/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/CartPoleUnconstrained/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
 
 ## Setup
 
