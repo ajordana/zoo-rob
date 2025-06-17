@@ -208,7 +208,7 @@ def create_algorithm(
             )
     
     elif name == "visualization":
-            algorithm = SamplingBasedController(
+            algorithm = PredictiveSampling(
                 task,
                 num_samples = num_samples,
                 noise_level= noise,
