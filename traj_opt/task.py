@@ -89,28 +89,6 @@ def create_task(task_name: str
         mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
 
     # Hard tasks (contact rich)
-    elif task_name == "Walker":
-        from hydrax.tasks.walker import Walker
-        task = WalkerUnconstrained()
-        # task = Walker()
-
-        task.dt = 0.02
-        task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 1
-        task.mj_model.opt.ls_iterations = 6
-        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
-
-        task.model = mjx.put_model(task.mj_model)
-        task.model = task.model.replace(
-            opt=task.model.opt.replace(
-                timestep= 0.02,
-                iterations=1,
-                ls_iterations=6,
-            )
-        )
-        mj_model = task.mj_model # Model used by the simulator when visualizing results
-
-        mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
         
     elif task_name == "PushT":
         # PushT
@@ -135,30 +113,30 @@ def create_task(task_name: str
         mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
         mj_data.qpos = [0.1, 0.1, 1.3, 0.0, 0.0]
 
-    elif task_name == "CubeRotation":
-        # CubeRotation
-        task = CubeRotation()
-        task.dt = 0.02
-        task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 2
-        task.mj_model.opt.ls_iterations = 5
-        task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
-        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+    # elif task_name == "CubeRotation":
+    #     # CubeRotation
+    #     task = CubeRotation()
+    #     task.dt = 0.02
+    #     task.mj_model.opt.timestep = task.dt
+    #     task.mj_model.opt.iterations = 2
+    #     task.mj_model.opt.ls_iterations = 5
+    #     task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
+    #     task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-        # Convert to MJX and fix precision issues
-        task.model = mjx.put_model(task.mj_model)
+    #     # Convert to MJX and fix precision issues
+    #     task.model = mjx.put_model(task.mj_model)
 
-        task.model = task.model.replace(
-            opt=task.model.opt.replace(
-                timestep=0.02,
-                iterations=2,
-                ls_iterations=5,
-                o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2]),
-            )
-        )
-        mj_model = task.mj_model # Model used by the simulator when visualizing results
+    #     task.model = task.model.replace(
+    #         opt=task.model.opt.replace(
+    #             timestep=0.02,
+    #             iterations=2,
+    #             ls_iterations=5,
+    #             o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2]),
+    #         )
+    #     )
+    #     mj_model = task.mj_model # Model used by the simulator when visualizing results
 
-        mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
+    #     mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
 
     elif task_name == "Humanoid":
         #HumanoidMocap
@@ -187,34 +165,7 @@ def create_task(task_name: str
 
         mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
         mj_data.qpos[:] = task.reference[0]
-    
-    # elif task_name == "Humanoid":
-    #     from tasks.humanoid_standup_unoconstrained import HumanoidStandupUnconstrained
-    #     task = HumanoidStandup()
-    #     task.dt = 0.02
-    #     task.mj_model.opt.timestep = task.dt
-    #     task.mj_model.opt.iterations = 2  # Increased for better convergence
-    #     task.mj_model.opt.ls_iterations = 5
-    #     task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
-    #     task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-    #     # Convert and update MJX model
-    #     task.model = mjx.put_model(task.mj_model)
-    #     task.model = task.model.replace(
-    #         opt=task.model.opt.replace(
-    #             timestep=0.02,
-    #             iterations=2,
-    #             ls_iterations=5,
-    #             o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2])
-    #         )
-    #     )
-
-    #     mj_model = task.mj_model  # Model used by the simulator when visualizing results
-    #     mj_data = mujoco.MjData(mj_model) # Data for both simulator and optimizer
-    #     mj_data.qpos[:] = mj_model.keyframe("stand").qpos
-    #     mj_data.qpos[3:7] = [0.7, 0.0, -0.7, 0.0]
-    #     mj_data.qpos[:3] = [0, 0, 0.1]
-        
     else:
         print(f"{task_name} is not implemented")
 
