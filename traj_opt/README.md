@@ -1,10 +1,12 @@
 # Trajectory Optimization Benchmark for Sampling-Based Methods
 
-This benchmark evaluates sampling-based trajectory optimization algorithms using:
-- [Hydrax](https://github.com/vincekurtz/hydrax) - JAX-based trajectory optimization
+This benchmark evaluates sampling-based trajectory optimization algorithms based on:
+- [Hydrax](https://github.com/vincekurtz/hydrax) - Sampling-based model predictive control on GPU with JAX and MuJoCo MJX.
 - [Evosax](https://github.com/RobertTLange/evosax) - Evolution strategies library
 
 ## Visualizations of open-loop trajectory optimiztion solutions
+
+* All solutions were generated using 2048 samples with 200 iterations
 
 | MPPI | MPPI-CMA | MPPI-CMA Block Diagonal |
 |:----:|:-------------:|:------------------:|
