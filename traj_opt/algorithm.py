@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from hydrax.algs import Evosax, MPPI, PredictiveSampling
 from hydrax.task_base import Task
-
+from hydrax.alg_base import SamplingBasedController
 from algs.mppi_cma import MPPI_CMA
 from algs.mppi_lr import MPPI_lr
 from algs.mppi_cma_bd import MPPI_CMA_BD
@@ -206,7 +206,17 @@ def create_algorithm(
                 spline_type= spline,
                 num_knots= num_knots,
             )
-        
+    
+    elif name == "visualization":
+            algorithm = SamplingBasedController(
+                task,
+                num_samples = num_samples,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type= spline,
+                num_knots= num_knots,
+            )
+
     else:
         print(f"{name} is not supported in this benchmark yet")
         raise NotImplementedError
