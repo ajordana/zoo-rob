@@ -1,67 +1,71 @@
-# This is the trajectory optimization benchmark for sampling based methods. 
-The algorithms used are based on Hydrax (https://github.com/vincekurtz/hydrax) and Evosax (https://github.com/RobertTLange/evosax)
+# Trajectory Optimization Benchmark for Sampling-Based Methods
 
+This benchmark evaluates sampling-based trajectory optimization algorithms using:
+- [Hydrax](https://github.com/vincekurtz/hydrax) - JAX-based trajectory optimization
+- [Evosax](https://github.com/RobertTLange/evosax) - Evolution strategies library
 
-# Setup
+## Humanoid Balancing Visualizations
 
-create a new environement 
+| MPPI | MPPI-CMA | MPPI-CMA Block Diagonal |
+|:----:|:-------------:|:------------------:|
+| ![MPPI Results](figures/HumanoidMocap/MPPI.gif) | ![MPPI CMA Results](figures/HumanoidMocap/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/HumanoidMocap/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
+
+## Setup
+
+### 1. Create and activate conda environment
 ```bash
-conda create -n benchmark
-```
-
-Enter the conda env:
-
-```bash
+conda create -n benchmark python=3.10
 conda activate benchmark
+conda install pip
 ```
 
-Install the package and dependencies:
-
+### 2. Install dependencies
+Navigate to the project directory and install packages:
 ```bash
-conda install pip
-
 cd traj_opt
 
-# Direct git dependencies (installed without deps)
+# Install git dependencies without their dependencies
 pip install --no-deps git+https://github.com/vincekurtz/hydrax@63c715d#egg=hydrax
 pip install --no-deps evosax==0.2.0
 
+# Install remaining dependencies with JAX CUDA support
 pip install -r requirements.txt --extra-index-url https://storage.googleapis.com/jax_releases/jax_cuda_releases.html
-
 ```
 
-Run Hydrax's unittest suite
-
+### 3. Verify Hydrax installation
+Run Hydrax's test suite to ensure proper installation:
 ```bash
+# Create temporary directory and clone Hydrax
 tmpdir=$(mktemp -d)
 git clone https://github.com/vincekurtz/hydrax.git "$tmpdir"
 git -C "$tmpdir" checkout 63c715d
 
-pip install pytest   
-pytest -q "$tmpdir/tests" # run Hydrax's test suite
+# Install pytest and run tests
+pip install pytest
+pytest -q "$tmpdir/tests"
 
+# Clean up
 rm -rf "$tmpdir"
 ```
 
-Test determinism of rollouts on GPU
+## Testing
 
+### Test GPU determinism
 ```bash
-
-pytest tests/test_deterministic_rollouts_gpu.py 
-
+pytest tests/test_deterministic_rollouts_gpu.py
 ```
 
-(Optionally) Test MPPI with learning rate, MPPI-CMA, MPPI-CMA-BlockDiagonal
-
+### Run full test suite (optional)
+Test algorithms including MPPI with learning rate, MPPI-CMA, and MPPI-CMA-BlockDiagonal:
 ```bash
-
-pytest --ignore=tests/test_deterministic_rollouts_gpu.py 
-
+pytest --ignore=tests/test_deterministic_rollouts_gpu.py
 ```
 
-# Note
+## Important Notes
 
-For the reproducibility of benchmarks, we need mjx to be determinstic. 
+### Determinism Requirements
+For reproducible benchmarks, MuJoCo MJX must run deterministically. This requires:
+- Using the XLA flag: `--xla_gpu_deterministic_ops=true`
+- JAX version ≤ 0.4.34 for proper deterministic behavior with MJX
 
-Determinsism can be enforced using this flag: ```bash --xla_gpu_deterministic_ops=true ```. 
-However, the flag only works as expected with mjx under jax <= 0.4.34, which conflicts the version pinned by Hydrax and Evosax. So we need to test hydrax after installing jax <= 0.4.34.
+**Version Conflict**: The deterministic flag works reliably with JAX ≤ 0.4.34, but Hydrax and Evosax pin newer JAX versions. Test Hydrax functionality after installing the appropriate JAX version.
