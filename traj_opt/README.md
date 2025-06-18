@@ -1,8 +1,10 @@
 # Trajectory Optimization Benchmark for Sampling-Based Methods
 
 This benchmark evaluates sampling-based trajectory optimization algorithms based on:
-- [Hydrax](https://github.com/vincekurtz/hydrax) - Sampling-based model predictive control on GPU with JAX and MuJoCo MJX.
-- [Evosax](https://github.com/RobertTLange/evosax) - Evolution strategies library
+- [Hydrax](https://github.com/vincekurtz/hydrax) - Sampling-based model predictive control on GPU.
+- [Evosax](https://github.com/RobertTLange/evosax) - Evolution strategies library.
+- [MuJoCo XLA (MJX)](https://github.com/google-deepmind/mujoco/tree/main/mjx) - GPU batched parallel rollouts.
+
 
 ## Visualizations of open-loop trajectory optimiztion solutions
 
@@ -18,7 +20,7 @@ This benchmark evaluates sampling-based trajectory optimization algorithms based
 
 ### 1. Create and activate conda environment
 ```bash
-conda create -n benchmark python=3.10
+conda create -n benchmark python=3.12
 conda activate benchmark
 conda install pip
 ```
@@ -28,7 +30,7 @@ Navigate to the project directory and install packages:
 ```bash
 cd traj_opt
 
-# Install git dependencies without their dependencies
+# Install hydrax and evosax without their dependencies
 pip install --no-deps git+https://github.com/vincekurtz/hydrax@63c715d#egg=hydrax
 pip install --no-deps evosax==0.2.0
 
@@ -44,9 +46,8 @@ tmpdir=$(mktemp -d)
 git clone https://github.com/vincekurtz/hydrax.git "$tmpdir"
 git -C "$tmpdir" checkout 63c715d
 
-# Install pytest and run tests
-pip install pytest
-pytest -q "$tmpdir/tests"
+# Run tests
+pytest -v "$tmpdir/tests"
 
 # Clean up
 rm -rf "$tmpdir"
