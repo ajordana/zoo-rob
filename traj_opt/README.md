@@ -68,7 +68,7 @@ pytest --ignore=tests/test_deterministic_rollouts_gpu.py
 ## Important Notes
 
 ### Determinism Requirements
-For reproducible benchmarks, MuJoCo MJX must run deterministically. This requires:
+For reproducible benchmarks, MuJoCo-XLA (MJX) must run deterministically. This requires:
 - Using the XLA flag: `--xla_gpu_deterministic_ops=true`
 - JAX version ≤ 0.4.34 for proper deterministic behavior with MJX
 
