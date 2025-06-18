@@ -8,7 +8,6 @@ from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 from tasks.pusht_unconstrained import PushTUnconstrained
 from tasks.pendulum_unconstrained import PendulumUnconstrained
 from tasks.double_cart_pole_unconstrained import DoubleCartPoleUnconstrained
-from tasks.walker_unconstrained import WalkerUnconstrained
 from tasks.humanoid_mocap import HumanoidMocap
 
 from hydrax.task_base import Task
