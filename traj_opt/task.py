@@ -25,7 +25,6 @@ def create_task(task_name: str
         task.mj_model.opt.ls_iterations = 5
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-        # Convert to MJX and fix precision issues
         task.model = mjx.put_model(task.mj_model)
         task.model = task.model.replace(
             opt=task.model.opt.replace(
@@ -48,7 +47,6 @@ def create_task(task_name: str
         task.mj_model.opt.ls_iterations = 5
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-        # Convert to MJX and fix precision issues
         task.model = mjx.put_model(task.mj_model)
         task.model = task.model.replace(
             opt=task.model.opt.replace(
@@ -72,7 +70,6 @@ def create_task(task_name: str
         task.mj_model.opt.ls_iterations = 5
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-        # Convert to MJX and fix precision issues
         task.model = mjx.put_model(task.mj_model)
         task.model = task.model.replace(
             opt=task.model.opt.replace(
@@ -112,17 +109,15 @@ def create_task(task_name: str
         mj_data.qpos = [0.1, 0.1, 1.3, 0.0, 0.0]
 
 
-    elif task_name == "Humanoid":
+    elif task_name == "HumanoidBalance":
         #HumanoidMocap
         task = HumanoidMocap(reference_filename="DefaultDatasets/mocap/UnitreeG1/balance.npz", start = 200) # Humanoid balancing!
-        # Enhanced solver settings for contact-rich scenarios
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 1  # Increased for better convergence
+        task.mj_model.opt.iterations = 1  
         task.mj_model.opt.ls_iterations = 6
         task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
-        # Disable features that might cause non-determinism
 
         # Convert and update MJX model
         task.model = mjx.put_model(task.mj_model)
@@ -144,14 +139,12 @@ def create_task(task_name: str
     elif task_name == "HumanoidStandup":
         from hydrax.tasks.humanoid_standup import HumanoidStandup
         task = HumanoidStandup()
-        # Enhanced solver settings for contact-rich scenarios
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
-        task.mj_model.opt.iterations = 1  # Increased for better convergence
+        task.mj_model.opt.iterations = 1  
         task.mj_model.opt.ls_iterations = 6
         task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
-        # Disable features that might cause non-determinism
 
         # Convert and update MJX model
         task.model = mjx.put_model(task.mj_model)
