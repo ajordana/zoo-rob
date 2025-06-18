@@ -36,8 +36,6 @@ spline = "zero" # "zero", "linear", "cubic"
 run_benchmark = True # running benchmarks or not
 
 
-
-
 task, mj_model, mj_data = create_task(task_name=task_name)
 # Python
 if task.model.opt.disableflags & mujoco.mjtDisableBit.mjDSBL_WARMSTART:
