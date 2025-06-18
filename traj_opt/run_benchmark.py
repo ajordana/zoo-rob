@@ -4,13 +4,11 @@ import os
 import jax
 from pathlib import Path
 import mujoco
+import matplotlib.pyplot as plt
 
 from traj_opt_helper import TrajectoryOptimizer
 from algorithm import create_algorithm
 from task import create_task
-
-
-# jax.config.update("jax_platform_name", "cpu")  
 
 xla_flags = os.environ.get("XLA_FLAGS", "")
 xla_flags += " --xla_gpu_triton_gemm_any=True"
@@ -21,20 +19,23 @@ os.environ["XLA_FLAGS"] = xla_flags
 print(jax.devices()) 
 
 
-algorithms = ["PredictiveSampling"]#["CMA-ES", "MPPI_CMA lr=(1.0, 0.1)", "MPPI_CMA_BD lr=(1.0, 0.1)", "MPPI", "MPPI_CMA lr=(0.1, 0.1)", "MPPI", "MPPI lr=0.1", "PredictiveSampling",  "CMA-ES", "RandomizedSmoothing lr=0.1",] # MPPI, MPPI_CMA, RandomizedSmoothing, PredictiveSampling, CMA-ES
-task_name = "Humanoid" # "CartPole", "InvertedPendulum", "DoubleCartPole", "PushT", "CubeRotation", "Humanoid"
+algorithms = ["MPPI", "MPPI lr=0.1", "MPPI_CMA lr=(1.0, 0.1)", "MPPI_CMA lr=(0.1, 0.1)", "MPPI_CMA_BD lr=(1.0, 0.1)", "MPPI_CMA_BD lr=(0.1, 0.1)", "PredictiveSampling", "RandomizedSmoothing lr=0.1", "CMA-ES",] # ["MPPI",  "MPPI_CMA lr=(1.0, 0.1)", "PredictiveSampling", "RandomizedSmoothing lr=0.1"]
+task_name = "Humanoid" # "CartPole", "InvertedPendulum", "DoubleCartPole", "PushT", "Humanoid"
 
-# Experimental settings:
-num_trails = 1 # 6
-max_iterations = 200
+# Experimental parameters:
+num_trails = 6 # 6
+max_iterations = 100
 num_samples = 2048 # 2048
 sigma_init = 0.3 # 0.3
 temperature = 0.1
 horizon = 1.0 # Suggested horizon: 1.0 (for humanoid); 2.0 (for others)
 
 # Set this to (horizon/mj_model.opt.timestep) equals to no spline interpolation
-num_knots = 8 # Suggested num_knots: 200 (for easy tasks: no interpolation);  1 knot  out of 5 ctrl steps (for hard tasks)
+num_knots = 8 # Suggested num_knots: 200 (for easy tasks: no interpolation);  20 for PushT, and 8 for Humanoid
 spline = "zero" # "zero", "linear", "cubic"
+run_benchmark = True # running benchmarks or not
+
+
 
 
 task, mj_model, mj_data = create_task(task_name=task_name)
@@ -44,30 +45,32 @@ if task.model.opt.disableflags & mujoco.mjtDisableBit.mjDSBL_WARMSTART:
 else:
     print("Warmstart is ENABLED")
 
+if run_benchmark == True:
+    for algorithm in algorithms:
 
-for algorithm in algorithms:
+        alg = create_algorithm(name = algorithm, 
+                            task = task,
+                            num_samples = num_samples,
+                            horizon = horizon,
+                            num_knots = num_knots,
+                            spline = spline,
+                            temperature = temperature,
+                            noise = sigma_init)
 
-    alg = create_algorithm(name = algorithm, 
-                        task = task,
-                        num_samples = num_samples,
-                        horizon = horizon,
-                        num_knots = num_knots,
-                        spline = spline,
-                        temperature = temperature,
-                        noise = sigma_init)
+        to = TrajectoryOptimizer(algorithm, alg, mj_model, mj_data)
+        to.trails(max_iteration=max_iterations, num_trails = num_trails, save_npz=True)
+else:
+    alg = create_algorithm(name = "visualization", 
+                            task = task,
+                            num_samples = num_samples,
+                            horizon = horizon,
+                            num_knots = num_knots,
+                            spline = spline,
+                            temperature = temperature,
+                            noise = sigma_init)
 
-    to = TrajectoryOptimizer(algorithm, alg, mj_model, mj_data)
-    to.trails(max_iteration=max_iterations, num_trails = num_trails, save_npz=True)
+    to = TrajectoryOptimizer("visualization", alg, mj_model, mj_data)
 
-
-    to = TrajectoryOptimizer("MPPI", alg, mj_model, mj_data)
-
-
-from plot import visualize_optimization_results
-
-details = visualize_optimization_results(task, algorithms)
-
-import matplotlib.pyplot as plt
 
 print("┌──────────────────────────────────────────────┐")
 print("│        Visualising results…                  │")
@@ -104,3 +107,5 @@ plt.ylabel("Cost")
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+to.visualize_rollout_gif(task, "MPPI_CMA lr=(1.0, 0.1)", fps=30, show_reference=True)
