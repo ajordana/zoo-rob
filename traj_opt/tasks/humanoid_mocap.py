@@ -10,7 +10,8 @@ from mujoco.mjx._src.math import quat_sub
 
 from hydrax import ROOT
 from hydrax.task_base import Task
-
+# This task is modified from Hydrax, added a starting frame option
+# https://github.com/vincekurtz/hydrax/tree/main/hydrax/tasks
 
 class HumanoidMocap(Task):
     """The Unitree G1 humanoid tracks a reference from motion capture.
