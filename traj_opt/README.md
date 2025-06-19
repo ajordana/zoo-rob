@@ -109,4 +109,4 @@ For reproducible benchmarks, MuJoCo‑XLA (MJX) must run deterministically. This
 - Setting the XLA flag: `--xla_gpu_deterministic_ops=true`
 - Using **JAX ≤ 0.4.34** for reliable deterministic behavior with MJX
 
-**Version Conflict**: The deterministic flag works reliably with JAX ≤ 0.4.34 (see [jax‑ml/jax#27796](https://github.com/jax-ml/jax/issues/27796)), but Hydrax and EvoSax pin newer JAX versions. After downgrading, run the Hydrax tests above to confirm nothing breaks.
+**Version Conflict**: The deterministic flag works reliably with JAX ≤ 0.4.34 (see [jax‑ml/jax#27796](https://github.com/jax-ml/jax/issues/27796)), but Hydrax and EvoSax pinned newer JAX versions. After downgrading, run the Hydrax tests above to confirm nothing breaks.
