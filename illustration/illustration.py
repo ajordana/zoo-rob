@@ -1,12 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 
-CAPSIZE = 5
-LABELSIZE  = 22
-FONTSIZE   = 26
+
+CAPSIZE     = 5
+LABELSIZE   = 22
+FONTSIZE    = 26
 FIGSIZE    = (19.2,10.8)
-LINEWIDTH  = 4
+FIGSIZE_SQ = (13.8,10.8)
+LINEWIDTH   = 4
 
+# PDF / PS font embedding for publication-quality output
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"]  = 42
 
 
 def g(x):
@@ -67,7 +73,7 @@ plt.yticks(fontsize=LABELSIZE)
 plt.legend(fontsize=LABELSIZE)
 plt.grid(True)
 plt.tight_layout()
-# plt.show()
+plt.savefig("risk-illustration.pdf", bbox_inches="tight")
 
 
 
@@ -85,22 +91,6 @@ plt.yticks(fontsize=LABELSIZE)
 plt.legend(fontsize=LABELSIZE)
 plt.grid(True)
 plt.tight_layout()
+plt.savefig("smoothing-illustration.pdf", bbox_inches="tight")
 plt.show()
 
-
-# # Plotting
-# plt.figure(figsize=FIGSIZE)
-# for beta in [1, 2, 4]:
-#     f_vals = np.exp(-beta * f(x_vals))
-#     integral = np.sum(f_vals) * (x_up - x_low) / N_data
-#     plt.plot(x_vals, f_vals / integral, label='beta = ' + str(beta), linewidth=LINEWIDTH)
-
-# # plt.title('RS vs LSE', fontsize=FONTSIZE)
-# plt.xlabel('x', fontsize=LABELSIZE)
-# plt.ylabel('f(x)', fontsize=LABELSIZE)
-# plt.xticks(fontsize=LABELSIZE)
-# plt.yticks(fontsize=LABELSIZE)
-# plt.legend(fontsize=LABELSIZE)
-# plt.grid(True)
-# plt.tight_layout()
-# plt.show()
