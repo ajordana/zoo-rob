@@ -1,17 +1,9 @@
-# Randomized Smoothing Reinforcement Learning (RS-RL)
+# Deterministic Policy Gradient with Randomized Smoothing
 
-Welcome to the **Randomized Smoothing Reinforcement Learning (RS-RL)** repository! This project builds on the CleanRL codebase to implement randomized smoothed versions of the DDPG and TD3 algorithms, alongside standard implementations of PPO, DDPG, and TD3. Our goal is to explore and evaluate the effectiveness of randomized smoothing techniques in reinforcement learning (RL) for improved robustness and performance.
+This project builds on the CleanRL codebase to implement randomized smoothed versions of the DDPG and TD3 algorithms, alongside standard implementations of PPO, DDPG, and TD3. Our goal is to explore and evaluate the effectiveness of randomized smoothing techniques in reinforcement learning (RL). Two types of smoothing are proposed:
+- Randomize Smoothing (leading to the algorithms RS-DDPG and RS-TD3)
+- Log-Sum-Exp Smoothing (leading to the algorithms LSE-DDPG and LSE-TD3)
 
-## Project Overview
-
-RS-RL introduces randomized smoothing to the DDPG and TD3 algorithms, creating variants such as RS-DDPG and RS-TD3, as well as LSE (Locally Smoothed Exploration) versions like LSE-DDPG and LSE-TD3. These implementations aim to enhance the stability and generalization of RL agents by mitigating the effects of noise and adversarial perturbations during training and evaluation.
-
-## Features
-
-- **Algorithms**: Implementations of PPO, DDPG, TD3, RS-DDPG, RS-TD3, LSE-DDPG, and LSE-TD3.
-- **Training Scripts**: Easy-to-use Python scripts for training agents on various environments.
-- **Visualization**: Tools to generate performance curves and comparisons using a forked version of OpenRLBenchmark.
-- **Integration with Weights & Biases (W&B)**: Track experiments and visualize results seamlessly.
 
 ## Getting Started
 
@@ -62,14 +54,6 @@ python -m openrlbenchmark.rlops
 - Update the environment IDs (e.g., `Ant-v4`, `Hopper-v4`) to match the environments on which your agents were trained.
 
 This command will generate comparative plots and a report for the specified experiments and environments, saved to the designated output filename.
-
-## Contributing
-
-We welcome contributions to improve RS-RL! Please submit issues for bugs or feature requests, and feel free to fork the repository and submit pull requests with your enhancements.
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Acknowledgments
 
