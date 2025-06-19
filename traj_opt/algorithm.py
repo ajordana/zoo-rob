@@ -9,6 +9,7 @@ from hydrax.alg_base import SamplingBasedController
 from algs.mppi_cma import MPPI_CMA
 from algs.mppi_lr import MPPI_lr
 from algs.mppi_cma_bd import MPPI_CMA_BD
+from algs.randomized_smoothing import RandomizedSmoothing
 
 from evosax.algorithms.distribution_based import CMA_ES, Open_ES
 from evosax.types import Fitness, Params, Population, State
@@ -43,81 +44,108 @@ def create_algorithm(
     
     elif name == "RandomizedSmoothing lr=1":
 
-        def baseline_subtraction_fitness_shaping_fn(
-            population: Population, fitness: jax.Array, state: State, params: Params
-            ) -> Fitness:
+        # def baseline_subtraction_fitness_shaping_fn(
+        #     population: Population, fitness: jax.Array, state: State, params: Params
+        #     ) -> Fitness:
 
-            fitness = fitness - jnp.mean(fitness, axis=0)
-            return fitness
+        #     fitness = fitness - jnp.mean(fitness, axis=0)
+        #     return fitness
 
-        Open_ES_ = partial(
-            Open_ES,                         
-            optimizer=optax.sgd(1),        
-            std_schedule=optax.constant_schedule(noise),
-            use_antithetic_sampling=False,
-            fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
-        )
+        # Open_ES_ = partial(
+        #     Open_ES,                         
+        #     optimizer=optax.sgd(1),        
+        #     std_schedule=optax.constant_schedule(noise),
+        #     use_antithetic_sampling=False,
+        #     fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
+        # )
 
-        algorithm = Evosax(
+        # algorithm = Evosax(
+        #     task=task,
+        #     optimizer=Open_ES_,
+        #     num_samples=num_samples,
+        #     plan_horizon=horizon,
+        #     spline_type=spline,
+        #     num_knots=num_knots,
+        #     )
+        algorithm = RandomizedSmoothing(
             task=task,
-            optimizer=Open_ES_,
             num_samples=num_samples,
+            num_knots= num_knots,
             plan_horizon=horizon,
-            spline_type=spline,
-            num_knots=num_knots,
-            )
+            mu=noise,
+            lr = 1
+        )
 
     elif name == "RandomizedSmoothing lr=0.1":
 
-        def baseline_subtraction_fitness_shaping_fn(
-            population: Population, fitness: jax.Array, state: State, params: Params
-            ) -> Fitness:
+        # def baseline_subtraction_fitness_shaping_fn(
+        #     population: Population, fitness: jax.Array, state: State, params: Params
+        #     ) -> Fitness:
 
-            fitness = fitness - jnp.mean(fitness, axis=0)
-            return fitness
+        #     fitness = fitness - jnp.mean(fitness, axis=0)
+        #     return fitness
 
-        Open_ES_ = partial(
-            Open_ES,                         
-            optimizer=optax.sgd(0.1),        
-            std_schedule=optax.constant_schedule(noise),
-            use_antithetic_sampling=False,
-            fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
+        # Open_ES_ = partial(
+        #     Open_ES,                         
+        #     optimizer=optax.sgd(0.1),        
+        #     std_schedule=optax.constant_schedule(noise),
+        #     use_antithetic_sampling=False,
+        #     fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
+        # )
+
+        # algorithm = Evosax(
+        #     task=task,
+        #     optimizer=Open_ES_,
+        #     num_samples=num_samples,
+        #     plan_horizon=horizon,
+        #     spline_type=spline,
+        #     num_knots=num_knots,
+        #     )
+
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.1
         )
 
-        algorithm = Evosax(
-            task=task,
-            optimizer=Open_ES_,
-            num_samples=num_samples,
-            plan_horizon=horizon,
-            spline_type=spline,
-            num_knots=num_knots,
-            )
+
     elif name == "RandomizedSmoothing lr=0.01":
 
-        def baseline_subtraction_fitness_shaping_fn(
-            population: Population, fitness: jax.Array, state: State, params: Params
-            ) -> Fitness:
+        # def baseline_subtraction_fitness_shaping_fn(
+        #     population: Population, fitness: jax.Array, state: State, params: Params
+        #     ) -> Fitness:
 
-            fitness = fitness - jnp.mean(fitness, axis=0)
-            return fitness
+        #     fitness = fitness - jnp.mean(fitness, axis=0)
+        #     return fitness
 
-        Open_ES_ = partial(
-            Open_ES,                         
-            optimizer=optax.sgd(0.01),        
-            std_schedule=optax.constant_schedule(noise),
-            use_antithetic_sampling=False,
-            fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
-        )
+        # Open_ES_ = partial(
+        #     Open_ES,                         
+        #     optimizer=optax.sgd(0.01),        
+        #     std_schedule=optax.constant_schedule(noise),
+        #     use_antithetic_sampling=False,
+        #     fitness_shaping_fn = baseline_subtraction_fitness_shaping_fn,
+        # )
 
-        algorithm = Evosax(
+        # algorithm = Evosax(
+        #     task=task,
+        #     optimizer=Open_ES_,
+        #     num_samples=num_samples,
+        #     plan_horizon=horizon,
+        #     spline_type=spline,
+        #     num_knots=num_knots,
+        #     )
+        algorithm = RandomizedSmoothing(
             task=task,
-            optimizer=Open_ES_,
             num_samples=num_samples,
+            num_knots= num_knots,
             plan_horizon=horizon,
-            spline_type=spline,
-            num_knots=num_knots,
-            )
-    
+            mu=noise,
+            lr = 0.01
+        )
     elif name == "MPPI":
         algorithm = MPPI(
                 task,
