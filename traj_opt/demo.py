@@ -56,9 +56,9 @@ def parse_args() -> argparse.Namespace:
                         help="Initial standarad deviation σ.")
     parser.add_argument("--temperature",    type=float, default=0.1,
                         help="temperature for MPPI and its variants.")
-    parser.add_argument("--horizon",        type=float, default=2.0,
+    parser.add_argument("--horizon",        type=float, default=1.0,
                         help="Planning horizon in seconds.")
-    parser.add_argument("--num-knots",      type=int,   default=20,
+    parser.add_argument("--num-knots",      type=int,   default=10,
                         help="# of spline knots.")
     parser.add_argument("--spline",         type=str,   choices=["zero", "linear", "cubic"],
                         default="zero", help="Spline interpolation type.")
@@ -111,9 +111,7 @@ def main() -> None:
                     num_trails=args.num_trails,
                     save_npz=True)
 
-    print("\n┌──────────────────────────────────────────────┐")
-    print("│        Visualising results…                  │")
-    print("└──────────────────────────────────────────────┘")
+
 
     results_dir = Path(TrajectoryOptimizer.get_path(task))
     print(f"Results directory: {results_dir}")
@@ -147,7 +145,9 @@ def main() -> None:
     plt.show()
 
     if args.visualize:
-        
+        print("\n┌──────────────────────────────────────────────┐")
+        print("│        Visualising solutions...              │")
+        print("└──────────────────────────────────────────────┘")
         TrajectoryOptimizer("visualization", None, mj_model, mj_data)\
             .visualize_best_solution(task,
                                 args.algorithm,
