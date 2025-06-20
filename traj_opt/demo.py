@@ -27,8 +27,8 @@ def parse_args() -> argparse.Namespace:
                     "algorithms on MuJoCo tasks."
     )
 
-    parser.add_argument("--algorithms", type=str, default=(
-        "MPPI_CMA lr=(1.0, 0.1); MPPI"
+    parser.add_argument("--algorithm", type=str, default=(
+        "MPPI_CMA lr=(1.0, 0.1)"
     ), help="; separated list of algorithm names to evaluate.")
     parser.add_argument("--task", type=str,
                         choices=["CartPole", "InvertedPendulum", "DoubleCartPole",
@@ -49,9 +49,9 @@ def parse_args() -> argparse.Namespace:
                         help="Initial standarad deviation σ.")
     parser.add_argument("--temperature",    type=float, default=0.1,
                         help="temperature for MPPI and its variants.")
-    parser.add_argument("--horizon",        type=float, default=0.6,
+    parser.add_argument("--horizon",        type=float, default=2.0,
                         help="Planning horizon in seconds.")
-    parser.add_argument("--num-knots",      type=int,   default=4,
+    parser.add_argument("--num-knots",      type=int,   default=20,
                         help="# of spline knots.")
     parser.add_argument("--spline",         type=str,   choices=["zero", "linear", "cubic"],
                         default="zero", help="Spline interpolation type.")
@@ -78,7 +78,6 @@ def main() -> None:
     
     set_xla_flags(args.xla_deterministic)
     print("JAX devices:", jax.devices())
-    algorithms = [a.strip() for a in args.algorithms.split(";") if a.strip()]
     
     
     task, mj_model, mj_data = create_task(task_name=args.task)
@@ -88,21 +87,22 @@ def main() -> None:
         print("Warmstart is ENABLED")
 
     if args.run_benchmark:
-        for algo_name in algorithms:
 
-            algo = create_algorithm(
-                name=algo_name, task=task,
-                num_samples=args.num_samples,
-                horizon=args.horizon,
-                num_knots=args.num_knots,
-                spline=args.spline,
-                temperature=args.temperature,
-                noise=args.sigma_init,
-            )
-            to = TrajectoryOptimizer(algo_name, algo, mj_model, mj_data)
-            to.trails(max_iteration=args.max_iterations,
-                        num_trails=args.num_trails,
-                        save_npz=True)
+
+        algo = create_algorithm(
+            name= args.algorithm,
+            task=task,
+            num_samples=args.num_samples,
+            horizon=args.horizon,
+            num_knots=args.num_knots,
+            spline=args.spline,
+            temperature=args.temperature,
+            noise=args.sigma_init,
+        )
+        to = TrajectoryOptimizer(args.algorithm, algo, mj_model, mj_data)
+        to.trails(max_iteration=args.max_iterations,
+                    num_trails=args.num_trails,
+                    save_npz=True)
 
     print("\n┌──────────────────────────────────────────────┐")
     print("│        Visualising results…                  │")
@@ -112,12 +112,12 @@ def main() -> None:
     print(f"Results directory: {results_dir}")
 
     methods = {}
-    for alg in algorithms:
-        f = results_dir / f"{alg}_trails_costs.pkl"
-        try:
-            methods[alg] = np.asarray(joblib.load(f))
-        except FileNotFoundError:
-            print(f"[warn] {f.name} not found; skipping.")
+
+    f = results_dir / f"{args.algorithm}_trails_costs.pkl"
+    try:
+        methods[args.algorithm] = np.asarray(joblib.load(f))
+    except FileNotFoundError:
+        print(f"[warn] {f.name} not found; skipping.")
 
     if not methods:
         raise RuntimeError("No cost files loaded — nothing to plot.")
@@ -140,12 +140,11 @@ def main() -> None:
     plt.show()
 
     if args.visualize:
-        for algo_name in algorithms:
-            TrajectoryOptimizer("visualization", None, mj_model, mj_data)\
-                .visualize_rollout_gif(task,
-                                    algo_name,
-                                    fps=30,
-                                    )
+        
+        TrajectoryOptimizer("visualization", None, mj_model, mj_data)\
+            .visualize_rollout(task,
+                                args.algorithm,
+                                )
 
 
 if __name__ == "__main__":
