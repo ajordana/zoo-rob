@@ -1,8 +1,22 @@
+"""
+Trajectory-optimization experiment runner.
+
+Example:
+    python main.py \
+        --task Humanoid \
+        --algorithms "MPPI; MPPI_CMA lr=(1.0, 0.1)" \
+        --num-trails 3 --max-iterations 150 \
+        --num-samples 1024 --sigma-init 0.4 \
+        --temperature 0.05 --horizon 1.0 \
+        --num-knots 8 --spline zero \
+        --visualize --xla-deterministic
+"""
+import argparse
+import os
+from pathlib import Path
 import joblib
 import numpy as np
-import os
 import jax
-from pathlib import Path
 import mujoco
 import matplotlib.pyplot as plt
 
@@ -10,100 +24,136 @@ from traj_opt_helper import TrajectoryOptimizer
 from algorithm import create_algorithm
 from task import create_task
 
-xla_flags = os.environ.get("XLA_FLAGS", "")
-xla_flags += " --xla_gpu_triton_gemm_any=True"
-xla_flags += " --xla_gpu_deterministic_ops=true"
 
-os.environ["XLA_FLAGS"] = xla_flags
+# --------------------------------------------------------------------------- #
+#                               argument parsing                              #
+# --------------------------------------------------------------------------- #
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run/visualise sampling-based trajectory-optimisation "
+                    "algorithms on MuJoCo tasks."
+    )
 
-print(jax.devices()) 
+    parser.add_argument("--algorithms", type=str, default=(
+        "MPPI_CMA lr=(1.0, 0.1); MPPI"
+    ), help="; separated list of algorithm names to evaluate.")
+    parser.add_argument("--task", type=str,
+                        choices=["CartPole", "InvertedPendulum", "DoubleCartPole",
+                                 "PushT", "HumanoidBalance", "HumanoidStandup"],
+                        default="HumanoidBalance", help="Task to solve.")
+    
+    parser.add_argument("--benchmark", dest="run_benchmark",
+                        action=argparse.BooleanOptionalAction, default=True,
+                        help="Run optimisation benchmark (default true).")
 
+    parser.add_argument("--num-trails",    type=int,   default=1,
+                        help="# of experiments with different seeds.")
+    parser.add_argument("--max-iterations", type=int,  default=100,
+                        help="optimization iterations per trail.")
+    parser.add_argument("--num-samples",    type=int,   default=1024,
+                        help="# of samples.")
+    parser.add_argument("--sigma-init",     type=float, default=0.3,
+                        help="Initial standarad deviation σ.")
+    parser.add_argument("--temperature",    type=float, default=0.1,
+                        help="temperature for MPPI and its variants.")
+    parser.add_argument("--horizon",        type=float, default=0.6,
+                        help="Planning horizon in seconds.")
+    parser.add_argument("--num-knots",      type=int,   default=4,
+                        help="# of spline knots.")
+    parser.add_argument("--spline",         type=str,   choices=["zero", "linear", "cubic"],
+                        default="zero", help="Spline interpolation type.")
 
-algorithms = ["MPPI", "MPPI lr=0.1", "MPPI_CMA lr=(1.0, 0.1)", "MPPI_CMA lr=(0.1, 0.1)", "MPPI_CMA_BD lr=(1.0, 0.1)", "MPPI_CMA_BD lr=(0.1, 0.1)", "PredictiveSampling", "RandomizedSmoothing lr=0.1", "CMA-ES",] # ["MPPI",  "MPPI_CMA lr=(1.0, 0.1)", "PredictiveSampling", "RandomizedSmoothing lr=0.1"]
-task_name = "Humanoid" # "CartPole", "InvertedPendulum", "DoubleCartPole", "PushT", "Humanoid"
+    parser.add_argument("--visualize", action=argparse.BooleanOptionalAction,
+                        default=True, help="Visualize solution as a GIF")
+    # misc
+    parser.add_argument("--xla-deterministic", action=argparse.BooleanOptionalAction,
+                        default=False, help="Pass --xla_gpu_deterministic_ops=true.")
 
-# Experimental parameters:
-num_trails = 6 # 6
-max_iterations = 100
-num_samples = 2048 # 2048
-sigma_init = 0.3 # 0.3
-temperature = 0.1
-horizon = 1.0 # Suggested horizon: 1.0 (for humanoid); 2.0 (for others)
-
-# Set this to (horizon/mj_model.opt.timestep) equals to no spline interpolation
-num_knots = 8 # Suggested num_knots: 200 (for easy tasks: no interpolation);  20 for PushT, and 8 for Humanoid
-spline = "zero" # "zero", "linear", "cubic"
-run_benchmark = True # running benchmarks or not
-
-
-task, mj_model, mj_data = create_task(task_name=task_name)
-# Python
-if task.model.opt.disableflags & mujoco.mjtDisableBit.mjDSBL_WARMSTART:
-    print("Warmstart is DISABLED")
-else:
-    print("Warmstart is ENABLED")
-
-if run_benchmark == True:
-    for algorithm in algorithms:
-
-        alg = create_algorithm(name = algorithm, 
-                            task = task,
-                            num_samples = num_samples,
-                            horizon = horizon,
-                            num_knots = num_knots,
-                            spline = spline,
-                            temperature = temperature,
-                            noise = sigma_init)
-
-        to = TrajectoryOptimizer(algorithm, alg, mj_model, mj_data)
-        to.trails(max_iteration=max_iterations, num_trails = num_trails, save_npz=True)
-else:
-    alg = create_algorithm(name = "visualization", 
-                            task = task,
-                            num_samples = num_samples,
-                            horizon = horizon,
-                            num_knots = num_knots,
-                            spline = spline,
-                            temperature = temperature,
-                            noise = sigma_init)
-
-    to = TrajectoryOptimizer("visualization", alg, mj_model, mj_data)
+    return parser.parse_args()
 
 
-print("┌──────────────────────────────────────────────┐")
-print("│        Visualising results…                  │")
-print("└──────────────────────────────────────────────┘")
+def set_xla_flags(deterministic: bool) -> None:
+    flags = os.environ.get("XLA_FLAGS", "")
+    flags += " --xla_gpu_triton_gemm_any=True"
+    if deterministic:
+        flags += " --xla_gpu_deterministic_ops=true"
+    os.environ["XLA_FLAGS"] = flags
 
-results_dir = Path(TrajectoryOptimizer.get_path(task))
-print(f"Results directory: {results_dir}")
 
-methods = {}                                   # keep raw algorithm names
+def main() -> None:
+    args = parse_args()
+    
+    set_xla_flags(args.xla_deterministic)
+    print("JAX devices:", jax.devices())
+    algorithms = [a.strip() for a in args.algorithms.split(";") if a.strip()]
+    
+    
+    task, mj_model, mj_data = create_task(task_name=args.task)
+    if task.model.opt.disableflags & mujoco.mjtDisableBit.mjDSBL_WARMSTART:
+        print("Warmstart is DISABLED")
+    else:
+        print("Warmstart is ENABLED")
 
-for alg in algorithms:
-    f = results_dir / f"{alg}_trails_costs.pkl"
-    try:
-        arr = joblib.load(f)                   # shape (n_trials, n_iters)
-        methods[alg] = np.asarray(arr)
-    except FileNotFoundError:
-        print(f"[warn] {f.name} not found; skipping.")
+    if args.run_benchmark:
+        for algo_name in algorithms:
 
-if not methods:
-    raise RuntimeError("No cost files loaded — nothing to plot.")
+            algo = create_algorithm(
+                name=algo_name, task=task,
+                num_samples=args.num_samples,
+                horizon=args.horizon,
+                num_knots=args.num_knots,
+                spline=args.spline,
+                temperature=args.temperature,
+                noise=args.sigma_init,
+            )
+            to = TrajectoryOptimizer(algo_name, algo, mj_model, mj_data)
+            to.trails(max_iteration=args.max_iterations,
+                        num_trails=args.num_trails,
+                        save_npz=True)
 
-iters  = np.arange(next(iter(methods.values())).shape[1])
-colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    print("\n┌──────────────────────────────────────────────┐")
+    print("│        Visualising results…                  │")
+    print("└──────────────────────────────────────────────┘")
 
-plt.figure(figsize=(10, 6))
-for (name, costs), color in zip(methods.items(), colors):
-    q25, med, q75 = np.quantile(costs, [0.25, 0.5, 0.75], axis=0)
-    plt.plot(iters, med, lw=2, label=name, color=color)
-    plt.fill_between(iters, q25, q75, color=color, alpha=0.25)
+    results_dir = Path(TrajectoryOptimizer.get_path(task))
+    print(f"Results directory: {results_dir}")
 
-plt.title(f"{task_name.capitalize()} task — {costs.shape[1]-1} iterations, {num_trails} seeds")
-plt.xlabel("Iteration")
-plt.ylabel("Cost")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    methods = {}
+    for alg in algorithms:
+        f = results_dir / f"{alg}_trails_costs.pkl"
+        try:
+            methods[alg] = np.asarray(joblib.load(f))
+        except FileNotFoundError:
+            print(f"[warn] {f.name} not found; skipping.")
 
-to.visualize_rollout_gif(task, "MPPI_CMA lr=(1.0, 0.1)", fps=30, show_reference=True)
+    if not methods:
+        raise RuntimeError("No cost files loaded — nothing to plot.")
+
+    iters  = np.arange(next(iter(methods.values())).shape[1])
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    plt.figure(figsize=(10, 6))
+    for (name, costs), color in zip(methods.items(), colors):
+        q25, med, q75 = np.quantile(costs, [0.25, 0.5, 0.75], axis=0)
+        plt.plot(iters, med, lw=2, label=name, color=color)
+        plt.fill_between(iters, q25, q75, color=color, alpha=0.25)
+
+    # Fixed: Use args.task instead of args.task_name
+    plt.title(f"{args.task} — {iters[-1]} iterations, {args.num_trails} seeds")
+    plt.xlabel("Iteration")
+    plt.ylabel("Cost")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    if args.visualize:
+        for algo_name in algorithms:
+            TrajectoryOptimizer("visualization", None, mj_model, mj_data)\
+                .visualize_rollout_gif(task,
+                                    algo_name,
+                                    fps=30,
+                                    )
+
+
+if __name__ == "__main__":
+    main()

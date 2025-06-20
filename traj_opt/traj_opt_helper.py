@@ -1,15 +1,11 @@
 import time
-import statistics
-
 import jax
 import jax.numpy as jnp
 import os
 os.environ['MUJOCO_GL'] = 'egl'   # or 'osmesa'
 import mujoco
-
 import imageio
 from IPython.display import Image as IPyImage
-from mujoco import GLContext, MjvScene, MjvOption, MjrContext
 
 import mujoco.viewer
 import numpy as np
@@ -31,18 +27,7 @@ class TrajectoryOptimizer:
         mj_model: mujoco.MjModel,
         mj_data: mujoco.MjData,
     ):
-        # logging
-        print(
-            f"Trajectory Optimization with {controller.num_knots} steps "
-            f"over a {controller.ctrl_steps * controller.task.dt} "
-            f"second horizon."
-        )
 
-        print(f'task.dt:{controller.task.dt}; controller.dt:{controller.dt}; '
-            f'task.model.opt.timestep: {controller.task.model.opt.timestep}; '
-            f'task.mj_model.opt.timestep: {controller.task.mj_model.opt.timestep}; '
-            f'simulator mj_model.opt.timestep: {mj_model.opt.timestep}'
-            )
 
         self.warm_up = False
         self.mj_model = mj_model
@@ -57,9 +42,24 @@ class TrajectoryOptimizer:
         self.viewer = None
         self.controller_name = name
 
-        # initialize the controller
-        jit_optimize = jax.jit(partial(controller.optimize))
-        self.jit_optimize = jit_optimize
+        if controller is not None:
+
+            # initialize the controller
+            jit_optimize = jax.jit(partial(controller.optimize))
+            self.jit_optimize = jit_optimize
+            
+            # logging
+            print(
+                f"Trajectory Optimization with {controller.num_knots} steps "
+                f"over a {controller.ctrl_steps * controller.task.dt} "
+                f"second horizon."
+            )
+
+            print(f'task.dt:{controller.task.dt}; controller.dt:{controller.dt}; '
+                f'task.model.opt.timestep: {controller.task.model.opt.timestep}; '
+                f'task.mj_model.opt.timestep: {controller.task.mj_model.opt.timestep}; '
+                f'simulator mj_model.opt.timestep: {mj_model.opt.timestep}'
+                )
 
     @staticmethod
     def get_path(task):
@@ -444,7 +444,6 @@ class TrajectoryOptimizer:
                 
                 # Update ghost reference if provided
                 if reference is not None and ref_data is not None:
-                    # Calculate reference index based on current simulation time
                     t_ref = current_time * reference_fps
                     i_ref = int(t_ref)
                     i_ref = min(i_ref, reference.shape[0] - 1)
@@ -456,8 +455,6 @@ class TrajectoryOptimizer:
                 # Update scene and render
                 renderer.update_scene(data)
                 
-                # If we have a ghost reference, we need to render it separately
-                # and composite the images
                 if reference is not None and ref_data is not None:
                     # Render the main scene
                     main_img = renderer.render()
@@ -472,7 +469,6 @@ class TrajectoryOptimizer:
                     ghost_img = ghost_renderer.render()
                     ghost_renderer.close()
                     
-                    # Simple alpha blending (you may want to adjust alpha value)
                     alpha = 0.3  # Ghost transparency
                     blended_img = (1 - alpha) * main_img.astype(np.float32) + alpha * ghost_img.astype(np.float32)
                     img = np.clip(blended_img, 0, 255).astype(np.uint8)
@@ -490,7 +486,6 @@ class TrajectoryOptimizer:
 
         gif_path = os.path.join(path, f"{controller_name}.gif")
         
-        # Save GIF with infinite looping and proper duration
         imageio.mimsave(
             gif_path,
             frames,
@@ -500,16 +495,15 @@ class TrajectoryOptimizer:
         )
         print(f"GIF saved to: {gif_path}")
         
-        # Display the GIF in Jupyter notebook
-        from IPython.display import Image, display
-        # Method 1: Try loading from file
+        from IPython.display import Image
         try:
             gif_image = Image(filename=gif_path)
             return gif_image
         except:
-            # Method 2: Load as base64 data (more reliable)
             with open(gif_path, 'rb') as f:
                 gif_data = f.read()
             gif_image = Image(data=gif_data, format='gif')
+
             return gif_image
+
     
