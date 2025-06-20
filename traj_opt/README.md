@@ -29,14 +29,14 @@ This benchmark evaluates sampling‑based trajectory optimization algorithms bui
 | **Predictive Sampling**  | Sample & Choose the best                            | `"PredictiveSampling"`                                       |
 | **Your algorithm**       | Edit `algorithm.py` to add it                       |                                                              |
 
-> **Tip 💡** Learning‑rates need be modified in `algorithm.py` by adding a new option; all other parameters (e.g., samples, horizon, σ, temperature, spline settings) can be adjusted directly inside `benchmark.ipynb`.
+> **Tip 💡** Learning‑rates need to be modified in `algorithm.py` by adding a new option; all other parameters (e.g., samples, horizon, σ, temperature, spline settings) can be adjusted directly inside `benchmark.ipynb`.
 
 ## 🗺️ Supported Tasks
 
 | Difficulty | Tasks                                            |
 | ---------- | ------------------------------------------------ |
 | ⭐ Easy     | `CartPole`, `InvertedPendulum`, `DoubleCartPole` |
-| ⭐ Hard     | `PushT`, `HumanoidBalance`, `HumanoidStandup`                   |
+| ⭐ Hard (contact-rich)    | `PushT`, `HumanoidBalance`, `HumanoidStandup`                   |
 
 ## 🛠️ Setup
 
@@ -85,9 +85,9 @@ rm -rf "$tmpdir"
 python demo.py --task DoubleCartPole --algorithm "MPPI_CMA lr=(1.0, 0.1)"  --max-iterations 100 --num-samples 1024 --visualize --xla-deterministic 
 ```
 
-### 4. Play with the benchmark notebook 🎮
+### 5. Play with the benchmark notebook 🎮
 
-Open `benchmark.ipynb` to explore the benchmark, adjust parameters, plot convergence, and visualize roll‑outs.
+Open `benchmark.ipynb` to explore the benchmark, adjust parameters, plot convergence, and visualize the solution.
 
 ## 🧪 Testing
 
