@@ -2,7 +2,14 @@
 Trajectory-optimization experiment runner.
 
 Example:
-    python demo.py --task DoubleCartPole --algorithms "MPPI"  --max-iterations 100 --num-samples 1024 --visualize --xla-deterministic
+    python main.py \
+        --task Humanoid \
+        --algorithms "MPPI; MPPI_CMA lr=(1.0, 0.1)" \
+        --num-trails 3 --max-iterations 150 \
+        --num-samples 1024 --sigma-init 0.4 \
+        --temperature 0.05 --horizon 1.0 \
+        --num-knots 8 --spline zero \
+        --visualize --xla-deterministic
 """
 import argparse
 import os
