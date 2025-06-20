@@ -149,7 +149,7 @@ def main() -> None:
     if args.visualize:
         
         TrajectoryOptimizer("visualization", None, mj_model, mj_data)\
-            .visualize_rollout(task,
+            .visualize_best_solution(task,
                                 args.algorithm,
                                 )
 

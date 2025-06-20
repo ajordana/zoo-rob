@@ -318,7 +318,7 @@ class TrajectoryOptimizer:
 
         return cost_list
 
-    def visualize_rollout(self, task, controller_name):
+    def visualize_best_solution(self, task, controller_name):
         
         self.__create_temporary_viewer()
 
@@ -365,7 +365,7 @@ class TrajectoryOptimizer:
         self.tmp_mj_data.qpos[:] = self.mj_data.qpos
         self.tmp_mj_data.qvel[:] = self.mj_data.qvel
 
-    def visualize_rollout_gif(
+    def visualize_best_solution_gif(
         self,
         task,
         controller_name: str,
