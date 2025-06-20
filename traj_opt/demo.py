@@ -1,10 +1,10 @@
 """
-Trajectory-optimization experiment runner.
+Trajectory-optimization benchmark demo.
 
 Example:
     python main.py \
         --task Humanoid \
-        --algorithms "MPPI; MPPI_CMA lr=(1.0, 0.1)" \
+        --algorithms MPPI_CMA lr=(1.0, 0.1)" \
         --num-trails 3 --max-iterations 150 \
         --num-samples 1024 --sigma-init 0.4 \
         --temperature 0.05 --horizon 1.0 \

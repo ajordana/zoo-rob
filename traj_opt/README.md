@@ -79,6 +79,9 @@ pytest -v "$tmpdir/tests"
 # Clean up
 rm -rf "$tmpdir"
 ```
+### 4. Run the benchmark demo 🎮
+
+```bash  python demo.py --task DoubleCartPole --algorithm "MPPI_CMA lr=(1.0, 0.1)"  --max-iterations 100 --num-samples 1024 --visualize --xla-deterministic ```
 
 ### 4. Play with the benchmark notebook 🎮
 
