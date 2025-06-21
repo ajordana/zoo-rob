@@ -36,7 +36,7 @@ This benchmark evaluates sampling‑based trajectory optimization algorithms bui
 | Tasks                                            |
 | ------------------------------------------------ |
 | `CartPole`, `InvertedPendulum`, `DoubleCartPole` |
-| `PushT`, `HumanoidBalance`, `HumanoidStandup`                   |
+| `PushT`, `HumanoidBalance`, `HumanoidStandup`    |
 
 ## 🛠️ Setup
 
