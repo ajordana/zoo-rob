@@ -2,5 +2,5 @@
 
 
 This repository contains all the code necessary to reproduce the experiment of the paper: "An Introduction to Zero-Order Optimization Techniques for Robotics". The project is divided in two main sections:
-- The `traj-opt` folder contraining the trajectory optimization results.
+- The `traj_opt` folder contraining the trajectory optimization results.
 - The `rl` folder contraing the reinforcement learning results. 
