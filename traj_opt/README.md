@@ -33,10 +33,10 @@ This benchmark evaluates sampling‑based trajectory optimization algorithms bui
 
 ## 🗺️ Supported Tasks
 
-| Difficulty | Tasks                                            |
-| ---------- | ------------------------------------------------ |
-| ⭐ Easy     | `CartPole`, `InvertedPendulum`, `DoubleCartPole` |
-| ⭐ Hard (contact-rich)    | `PushT`, `HumanoidBalance`, `HumanoidStandup`                   |
+| Tasks                                            |
+| ------------------------------------------------ |
+| `CartPole`, `InvertedPendulum`, `DoubleCartPole` |
+| `PushT`, `HumanoidBalance`, `HumanoidStandup`                   |
 
 ## 🛠️ Setup
 
