@@ -119,7 +119,18 @@ class RandomizedSmoothing(SamplingBasedController):
         baseline = costs[-1]
 
         costs_subtract_baseline = costs[:-1] - baseline
+
+        # costs_subtract_baseline = costs[:-1] - jnp.mean(costs[:-1], axis=0)
+
+        clipped_perturbation = jnp.reshape((rollouts.knots[:-1, ...] - params.mean),
+                                    (self.num_samples,
+                                    self.num_knots,
+                                    self.task.model.nu)
+                    )
         
+        clipped_noise = clipped_perturbation / self.mu
+        params = params.replace(noise = clipped_noise)
+
         gradient = (1/self.mu) * jnp.mean(costs_subtract_baseline[:, None, None] * params.noise, 
                                           axis=0)
 
