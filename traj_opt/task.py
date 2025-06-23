@@ -8,7 +8,7 @@ from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 from tasks.pusht_unconstrained import PushTUnconstrained
 from tasks.pendulum_unconstrained import PendulumUnconstrained
 from tasks.double_cart_pole_unconstrained import DoubleCartPoleUnconstrained
-from tasks.humanoid_mocap import HumanoidMocap
+from tasks.humanoid_mocap_unconstrained import HumanoidMocapUnconstrained
 
 from hydrax.task_base import Task
 
@@ -94,7 +94,6 @@ def create_task(task_name: str
         task.mj_model.opt.ls_iterations = 5
         task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
 
-
         task.model = mjx.put_model(task.mj_model)
         task.model = task.model.replace(
             opt=task.model.opt.replace(
@@ -111,7 +110,7 @@ def create_task(task_name: str
 
     elif task_name == "HumanoidBalance":
         #HumanoidMocap
-        task = HumanoidMocap(reference_filename="DefaultDatasets/mocap/UnitreeG1/balance.npz", start = 200) # Humanoid balancing!
+        task = HumanoidMocapUnconstrained(reference_filename="DefaultDatasets/mocap/UnitreeG1/balance.npz", start = 200) # Humanoid balancing!
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
         task.mj_model.opt.iterations = 1  
@@ -137,7 +136,7 @@ def create_task(task_name: str
 
     elif task_name == "HumanoidWalk":
         #HumanoidMocap
-        task = HumanoidMocap(reference_filename="DefaultDatasets/mocap/UnitreeG1/walk.npz", start = 25) # Humanoid balancing!
+        task = HumanoidMocapUnconstrained(reference_filename="DefaultDatasets/mocap/UnitreeG1/walk.npz", start = 25) # Humanoid balancing!
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
         task.mj_model.opt.iterations = 1  
