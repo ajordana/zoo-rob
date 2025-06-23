@@ -13,7 +13,7 @@ from hydrax.task_base import Task
 # This task is modified from Hydrax, added a starting frame option
 # https://github.com/vincekurtz/hydrax/tree/main/hydrax/tasks
 
-class HumanoidMocap(Task):
+class HumanoidMocapUnconstrained(Task):
     """The Unitree G1 humanoid tracks a reference from motion capture.
 
     Retargeted motion capture data comes from the LocoMuJoCo dataset:
@@ -33,6 +33,17 @@ class HumanoidMocap(Task):
         mj_model = mujoco.MjModel.from_xml_path(
             ROOT + "/models/g1/scene_23dof.xml"
         )
+        
+        self.lb = mj_model.actuator_ctrlrange[:, 0].copy()
+        self.ub = mj_model.actuator_ctrlrange[:, 1].copy()
+
+        # mj_model.jnt_limited[:] = 0                
+        # mj_model.jnt_range[:]   = [-jnp.inf, jnp.inf]      
+
+        mj_model.actuator_forcelimited[:] = 0
+        mj_model.actuator_ctrllimited[:]  = 0
+        mj_model.actuator_ctrlrange[:]    = [-jnp.inf, jnp.inf]
+
         super().__init__(
             mj_model,
             trace_sites=["imu_in_torso", "left_foot", "right_foot"],
@@ -99,6 +110,24 @@ class HumanoidMocap(Task):
         cost_weights[:7] = 5.0  # Base pose is more important
         self.cost_weights = jnp.array(cost_weights)
 
+    def _bound_violation(self, ctrl, ord=2):
+        """
+        Constrained are enforced using eqn(14) of this paper: https://arxiv.org/pdf/2404.10395
+        Return ‖v‖ where v is the element-wise violation of controls
+        against [lb, ub].
+        """
+        lower = jnp.maximum(self.lb - ctrl, 0)   # only where A is below lb
+        upper = jnp.maximum(ctrl - self.ub, 0)   # only where A is above ub
+        v = lower + upper                # violation vector
+
+        # raw penalty = L_ord norm of the violation
+        penalty = 10 * jnp.linalg.norm(v, ord)
+        
+        # if penalty != 0 then add 1, else leave as 0: 
+        penalty = jnp.where(penalty != 0, penalty + 1, penalty)
+
+        return penalty
+    
     def _get_reference_configuration(self, t: jax.Array) -> jax.Array:
         """Get the reference position (q) at time t."""
         i = jnp.int32(t * self.reference_fps)

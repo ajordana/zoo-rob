@@ -6,7 +6,8 @@ from mujoco import mjx
 from hydrax.task_base import Task
 
 from pathlib import Path
-ROOT = str(Path(__file__).resolve().parent.parent)
+from hydrax import ROOT
+
 
 
 class PendulumUnconstrained(Task):
@@ -17,12 +18,21 @@ class PendulumUnconstrained(Task):
     def __init__(self) -> None:
         """Load the MuJoCo model and set task parameters."""
         mj_model = mujoco.MjModel.from_xml_path(
-            ROOT + "/models/pendulum_unconstrained/scene.xml"
+            ROOT + "/models/pendulum/scene.xml"
         )
+
+        self.lb = mj_model.actuator_ctrlrange[:, 0].copy()
+        self.ub = mj_model.actuator_ctrlrange[:, 1].copy()
+
+        # mj_model.jnt_limited[:] = 0                
+        # mj_model.jnt_range[:]   = [-jnp.inf, jnp.inf]      
+
+        mj_model.actuator_forcelimited[:] = 0
+        mj_model.actuator_ctrllimited[:]  = 0
+        mj_model.actuator_ctrlrange[:]    = [-jnp.inf, jnp.inf]
+
         super().__init__(mj_model, trace_sites=["tip"])
 
-        self.ub = jnp.array([1.])
-        self.lb = jnp.array([-1.])
 
 
     def _bound_violation(self, ctrl, ord=2):

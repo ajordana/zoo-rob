@@ -7,7 +7,8 @@ from mujoco import mjx
 from pathlib import Path
 
 from hydrax.task_base import Task
-ROOT = str(Path(__file__).resolve().parent.parent)
+# ROOT = str(Path(__file__).resolve().parent.parent)
+from hydrax import ROOT
 
 
 class PushTUnconstrained(Task):
@@ -18,9 +19,8 @@ class PushTUnconstrained(Task):
     def __init__(self) -> None:
         """Load the MuJoCo model and set task parameters."""
         mj_model = mujoco.MjModel.from_xml_path(
-            ROOT + "/models/pusht_unconstrained/scene.xml"
+            ROOT + "/models/pusht/scene.xml"
         )
-        super().__init__(mj_model, trace_sites=["pusher"])
 
         # Get sensor ids
         self.block_position_sensor = mujoco.mj_name2id(
@@ -30,8 +30,14 @@ class PushTUnconstrained(Task):
             mj_model, mujoco.mjtObj.mjOBJ_SENSOR, "orientation"
         )
 
-        self.ub = jnp.array([1., 1.])
-        self.lb = jnp.array([-1., -1.])
+        self.lb = mj_model.actuator_ctrlrange[:, 0].copy()
+        self.ub = mj_model.actuator_ctrlrange[:, 1].copy()
+
+        mj_model.actuator_forcelimited[:] = 0
+        mj_model.actuator_ctrllimited[:]  = 0
+        mj_model.actuator_ctrlrange[:]    = [-jnp.inf, jnp.inf]
+
+        super().__init__(mj_model, trace_sites=["pusher"])
 
     def _bound_violation(self, ctrl, ord=2):
         """
