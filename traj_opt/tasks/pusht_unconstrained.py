@@ -4,10 +4,7 @@ import jax
 import jax.numpy as jnp
 import mujoco
 from mujoco import mjx
-from pathlib import Path
-
 from hydrax.task_base import Task
-# ROOT = str(Path(__file__).resolve().parent.parent)
 from hydrax import ROOT
 
 
