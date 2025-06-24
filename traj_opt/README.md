@@ -12,7 +12,7 @@ This benchmark evaluates sampling‑based trajectory optimization algorithms bui
 
 | MPPI | MPPI-CMA | MPPI-CMA Block Diagonal |
 |:----:|:-------------:|:------------------:|
-| ![MPPI Results](figures/HumanoidMocap/MPPI.gif) | ![MPPI CMA Results](figures/HumanoidMocap/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/HumanoidMocapUnconstrained/MPPI_CMA_BD lr=(0.1, 0.1).gif) |
+| ![MPPI Results](figures/HumanoidMocapUnconstrained/MPPI.gif) | ![MPPI CMA Results](figures/HumanoidMocapUnconstrained/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/HumanoidMocapUnconstrained/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
 | ![MPPI Results](figures/PushTUnconstrained/MPPI.gif) | ![MPPI CMA Results](figures/PushTUnconstrained/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/PushTUnconstrained/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
 | ![MPPI Results](figures/CartPoleUnconstrained/MPPI.gif) | ![MPPI CMA Results](figures/CartPoleUnconstrained/MPPI_CMA%20lr%3D%281.0%2C%200.1%29.gif) | ![MPPI CMA BD Results](figures/CartPoleUnconstrained/MPPI_CMA_BD%20lr%3D%281.0%2C%200.1%29.gif) |
 
