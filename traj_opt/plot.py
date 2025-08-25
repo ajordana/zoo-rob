@@ -125,7 +125,6 @@ def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True)
     ax.grid(True)
     ax.tick_params(axis='y', labelsize=LABELSIZE)
     ax.tick_params(axis='x', labelsize=LABELSIZE)
-    ax.yaxis.set_major_formatter(MAJOR_FORMATTER)
 
     # fig-level legend in the upper-left
     handles, labels = ax.get_legend_handles_labels()
@@ -135,8 +134,6 @@ def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True)
         prop={'size': FONTSIZE},
         framealpha=0.95
     )
-
-    fig.align_ylabels()   # keeps y-labels aligned if the layout changes
 
     if save:
         # ── save figure ────────────────────────────────────────────────────────────

@@ -125,7 +125,7 @@ def create_task(task_name: str
                 timestep=0.02,
                 iterations=1,
                 ls_iterations=6,
-                o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2])
+                # o_solimp=jnp.array([0.9, 0.95, 0.001, 0.5, 2])
             )
         )
 
