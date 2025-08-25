@@ -125,6 +125,8 @@ def visualize_optimization_results(task, algorithms, figsize=FIGSIZE, save=True)
     ax.grid(True)
     ax.tick_params(axis='y', labelsize=LABELSIZE)
     ax.tick_params(axis='x', labelsize=LABELSIZE)
+    # from matplotlib.ticker import MultipleLocator
+    # ax.yaxis.set_major_locator(MultipleLocator(10))
 
     # fig-level legend in the upper-left
     handles, labels = ax.get_legend_handles_labels()
