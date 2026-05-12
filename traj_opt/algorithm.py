@@ -3,7 +3,7 @@ import hydrax.alg_base
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hydrax.algs import Evosax, MPPI, PredictiveSampling
+from hydrax.algs import CEM, Evosax, MPPI, PredictiveSampling
 from hydrax.task_base import Task
 from hydrax.alg_base import SamplingBasedController
 from algs.mppi_cma import MPPI_CMA
@@ -41,7 +41,20 @@ def create_algorithm(
         )
 
         algorithm.es_params = algorithm.es_params.replace(std_init = noise)
-    
+
+    elif name == "CEM":
+
+        algorithm = CEM(
+            task=task,
+            num_samples=num_samples,
+            num_elites=max(1, num_samples // 10),
+            sigma_start=noise,
+            sigma_min=1e-3,
+            plan_horizon=horizon,
+            spline_type=spline,
+            num_knots=num_knots,
+        )
+
     elif name == "RandomizedSmoothing lr=1":
 
         algorithm = RandomizedSmoothing(
