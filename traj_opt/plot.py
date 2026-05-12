@@ -6,8 +6,8 @@ import os
 
 # ─── reference-style constants ──────────────────────────────────────────────────
 CAPSIZE     = 5
-LABELSIZE   = 22
-FONTSIZE    = 26
+LABELSIZE   = 28
+FONTSIZE    = 32
 FIGSIZE    = (19.2,10.8)
 FIGSIZE_SQ = (13.8,10.8)
 LINEWIDTH   = 4
@@ -23,7 +23,8 @@ COLORS = {
     "RandomizedSmoothing lr=0.01": 'b',
     "RandomizedSmoothing lr=1": 'b',
     "PredictiveSampling": 'purple',
-    "CMA-ES": 'orange'
+    "CMA-ES": 'orange',
+    "CEM": 'brown',
 }
 
 LINESTYLES = {
@@ -38,6 +39,7 @@ LINESTYLES = {
     "CMA-ES": '-',
     "MPPI_CMA_BD lr=(1.0, 0.1)": '-',
     "MPPI_CMA_BD lr=(0.1, 0.1)": '--',
+    "CEM": '-',
 }
 
 LABELS = {
@@ -52,6 +54,7 @@ LABELS = {
     "CMA-ES": 'CMA-ES',
     "MPPI_CMA_BD lr=(1.0, 0.1)": 'MPPI-CMA Block Diagonal lr=(1.0, 0.1)',
     "MPPI_CMA_BD lr=(0.1, 0.1)": 'MPPI-CMA Block Diagonal lr=(0.1, 0.1)',
+    "CEM": 'CEM',
 }
 
 # PDF / PS font embedding for publication-quality output
