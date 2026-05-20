@@ -8,7 +8,12 @@ from tasks.cart_pole_unconstrained import CartPoleUnconstrained
 from tasks.pusht_unconstrained import PushTUnconstrained
 from tasks.pendulum_unconstrained import PendulumUnconstrained
 from tasks.double_cart_pole_unconstrained import DoubleCartPoleUnconstrained
-from tasks.humanoid_mocap_unconstrained import HumanoidMocapUnconstrained
+from tasks.humanoid_balance_unconstrained import HumanoidBalanceUnconstrained
+from tasks.humanoid_walk_unconstrained import HumanoidWalkUnconstrained
+from tasks.humanoid_standup_unconstrained import HumanoidStandupUnconstrained
+from tasks.walker_unconstrained import WalkerUnconstrained
+from tasks.cube_unconstrained import CubeRotationUnconstrained
+from tasks.go2_walk_unconstrained import Go2WalkUnconstrained, Go2WalkNoGaitUnconstrained
 
 from hydrax.task_base import Task
 
@@ -108,9 +113,119 @@ def create_task(task_name: str
         mj_data.qpos = [0.1, 0.1, 1.3, 0.0, 0.0]
 
 
+    elif task_name in ("Go2Walk", "Go2WalkNoGait"):
+        task = Go2WalkUnconstrained() if task_name == "Go2Walk" else Go2WalkNoGaitUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 2
+        task.mj_model.opt.ls_iterations = 5
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=2,
+                ls_iterations=5,
+            )
+        )
+        mj_model = task.mj_model
+        mj_data = mujoco.MjData(mj_model)
+        mj_data.qpos[:] = task.qstand
+        mujoco.mj_forward(mj_model, mj_data)
+
+    elif task_name == "CubeRotation":
+        task = CubeRotationUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 2
+        task.mj_model.opt.ls_iterations = 5
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=2,
+                ls_iterations=5,
+            )
+        )
+        mj_model = task.mj_model
+        mj_data = mujoco.MjData(mj_model)
+
+    elif task_name == "Walker":
+        task = WalkerUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 2
+        task.mj_model.opt.ls_iterations = 5
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=2,
+                ls_iterations=5,
+            )
+        )
+        mj_model = task.mj_model
+
+        mj_data = mujoco.MjData(mj_model)
+
+    elif task_name == "HumanoidStandup":
+        task = HumanoidStandupUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 1
+        task.mj_model.opt.ls_iterations = 6
+        task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=1,
+                ls_iterations=6,
+            )
+        )
+
+        mj_model = task.mj_model
+        mj_data = mujoco.MjData(mj_model)
+        # Supine init: base low + 90° rotation about world y-axis so torso lies
+        # horizontally (face up). Joints kept at the "stand" keyframe to avoid
+        # invalid configurations.
+        mj_data.qpos[:] = mj_model.keyframe("stand").qpos
+        mj_data.qpos[:3] = [0.0, 0.0, 0.25]
+        mj_data.qpos[3:7] = [0.7071, 0.0, 0.7071, 0.0]
+        mujoco.mj_forward(mj_model, mj_data)
+
+    elif task_name == "HumanoidWalk":
+        task = HumanoidWalkUnconstrained()
+        task.dt = 0.02
+        task.mj_model.opt.timestep = task.dt
+        task.mj_model.opt.iterations = 1
+        task.mj_model.opt.ls_iterations = 6
+        task.mj_model.opt.o_solimp = [0.9, 0.95, 0.001, 0.5, 2]
+        task.mj_model.opt.disableflags |= mujoco.mjtDisableBit.mjDSBL_WARMSTART
+
+        task.model = mjx.put_model(task.mj_model)
+        task.model = task.model.replace(
+            opt=task.model.opt.replace(
+                timestep=0.02,
+                iterations=1,
+                ls_iterations=6,
+            )
+        )
+
+        mj_model = task.mj_model
+
+        mj_data = mujoco.MjData(mj_model)
+        mj_data.qpos[:] = task.reference[0]
+
     elif task_name == "HumanoidBalance":
-        #HumanoidMocap
-        task = HumanoidMocapUnconstrained(reference_filename="DefaultDatasets/mocap/UnitreeG1/balance.npz", start = 200) # Humanoid balancing!
+        task = HumanoidBalanceUnconstrained(reference_filename="DefaultDatasets/mocap/UnitreeG1/balance.npz", start = 200) # Humanoid balancing!
         task.dt = 0.02
         task.mj_model.opt.timestep = task.dt
         task.mj_model.opt.iterations = 1  

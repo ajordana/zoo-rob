@@ -3,7 +3,9 @@ import hydrax.alg_base
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hydrax.algs import CEM, Evosax, MPPI, PredictiveSampling
+from hydrax.algs import Evosax, MPPI, PredictiveSampling
+from algs.cem import CEM
+from algs.cem_bd import CEM_BD
 from hydrax.task_base import Task
 from hydrax.alg_base import SamplingBasedController
 from algs.mppi_cma import MPPI_CMA
@@ -42,14 +44,71 @@ def create_algorithm(
 
         algorithm.es_params = algorithm.es_params.replace(std_init = noise)
 
-    elif name == "CEM":
+    elif name == "CEM lr=(1.0, 0.1)":
 
         algorithm = CEM(
             task=task,
             num_samples=num_samples,
             num_elites=max(1, num_samples // 10),
             sigma_start=noise,
-            sigma_min=1e-3,
+            mean_lr=1.0,
+            cov_lr=0.1,
+            plan_horizon=horizon,
+            spline_type=spline,
+            num_knots=num_knots,
+        )
+
+    elif name == "CEM lr=(0.1, 0.1)":
+
+        algorithm = CEM(
+            task=task,
+            num_samples=num_samples,
+            num_elites=max(1, num_samples // 10),
+            sigma_start=noise,
+            mean_lr=0.1,
+            cov_lr=0.1,
+            plan_horizon=horizon,
+            spline_type=spline,
+            num_knots=num_knots,
+        )
+
+    elif name == "CEM lr=(1.0, 1.0)":
+
+        algorithm = CEM(
+            task=task,
+            num_samples=num_samples,
+            num_elites=max(1, num_samples // 10),
+            sigma_start=noise,
+            mean_lr=1.0,
+            cov_lr=1.0,
+            plan_horizon=horizon,
+            spline_type=spline,
+            num_knots=num_knots,
+        )
+
+    elif name == "CEM_BD lr=(1.0, 0.1)":
+
+        algorithm = CEM_BD(
+            task=task,
+            num_samples=num_samples,
+            num_elites=max(1, num_samples // 10),
+            sigma_start=noise,
+            mean_lr=1.0,
+            cov_lr=0.1,
+            plan_horizon=horizon,
+            spline_type=spline,
+            num_knots=num_knots,
+        )
+
+    elif name == "CEM_BD lr=(0.1, 0.1)":
+
+        algorithm = CEM_BD(
+            task=task,
+            num_samples=num_samples,
+            num_elites=max(1, num_samples // 10),
+            sigma_start=noise,
+            mean_lr=0.1,
+            cov_lr=0.1,
             plan_horizon=horizon,
             spline_type=spline,
             num_knots=num_knots,
@@ -78,6 +137,28 @@ def create_algorithm(
         )
 
 
+    elif name == "RandomizedSmoothing lr=0.2":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.2
+        )
+
+    elif name == "RandomizedSmoothing lr=0.05":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.05
+        )
+
     elif name == "RandomizedSmoothing lr=0.01":
 
 
@@ -88,6 +169,61 @@ def create_algorithm(
             plan_horizon=horizon,
             mu=noise,
             lr = 0.01
+        )
+
+    elif name == "RandomizedSmoothing lr=0.005":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.005
+        )
+
+    elif name == "RandomizedSmoothing lr=0.001":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.001
+        )
+
+    elif name == "RandomizedSmoothing lr=0.0005":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.0005
+        )
+
+    elif name == "RandomizedSmoothing lr=0.0001":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 0.0001
+        )
+
+    elif name == "RandomizedSmoothing lr=5e-05":
+
+        algorithm = RandomizedSmoothing(
+            task=task,
+            num_samples=num_samples,
+            num_knots= num_knots,
+            plan_horizon=horizon,
+            mu=noise,
+            lr = 5e-5
         )
     elif name == "MPPI":
         algorithm = MPPI(
@@ -117,7 +253,7 @@ def create_algorithm(
         algorithm = MPPI_CMA(
                 task,
                 num_samples = num_samples,
-                temperature = temperature,
+                temperature = 0.1,
                 noise_level= noise,
                 plan_horizon= horizon,
                 spline_type=spline,
@@ -125,13 +261,13 @@ def create_algorithm(
                 mean_lr= 1.0,
                 cov_lr= 0.1
             )
-    
+
     elif name == "MPPI_CMA lr=(0.1, 0.1)":
 
         algorithm = MPPI_CMA(
                 task,
                 num_samples = num_samples,
-                temperature = temperature,
+                temperature = 0.1,
                 noise_level= noise,
                 plan_horizon= horizon,
                 spline_type=spline,
@@ -139,7 +275,21 @@ def create_algorithm(
                 mean_lr= 0.1,
                 cov_lr= 0.1
             )
-        
+
+    elif name == "MPPI_CMA lr=(1.0, 1.0)":
+
+        algorithm = MPPI_CMA(
+                task,
+                num_samples = num_samples,
+                temperature = 0.1,
+                noise_level= noise,
+                plan_horizon= horizon,
+                spline_type=spline,
+                num_knots=num_knots,
+                mean_lr= 1.0,
+                cov_lr= 1.0
+            )
+
     elif name == "MPPI_CMA_BD lr=(1.0, 0.1)":
 
         algorithm = MPPI_CMA_BD(

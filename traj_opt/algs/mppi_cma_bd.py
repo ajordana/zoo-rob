@@ -125,7 +125,10 @@ class MPPI_CMA_BD(SamplingBasedController):
         
         D_noise = jnp.einsum("ijk, jk -> ijk", noise, D) # num_samples x num_knots x nu
 
-        perturbation = jnp.einsum("ijk, jkl -> ijl", D_noise, B) # num_samples x num_knots x nu
+        # Sample s = B @ diag(D) @ z, i.e. s[l] = Σ_k B[l, k] * D[k] * z[k].
+        # eigh returns eigenvectors as columns, so B[j, l, k] is the l-th
+        # component of the k-th eigenvector for block j.
+        perturbation = jnp.einsum("ijk, jlk -> ijl", D_noise, B) # num_samples x num_knots x nu
 
         controls = params.mean + perturbation
 

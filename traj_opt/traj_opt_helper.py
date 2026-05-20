@@ -68,6 +68,18 @@ class TrajectoryOptimizer:
         path = os.path.join(base_dir,"data", task_name) + "/"
         return path   
 
+    def _initial_knots(self):
+        """If the task exposes `default_action` (e.g. the home-pose joint
+        targets for a position-controlled robot), broadcast it across the
+        knots so the controller starts at a stable default. Otherwise return
+        None and let the algorithm use its own (zero) default."""
+        task = self.controller.task
+        if not hasattr(task, "default_action"):
+            return None
+        import jax.numpy as jnp
+        default = jnp.asarray(task.default_action)
+        return jnp.tile(default[None, :], (self.controller.num_knots, 1))
+
     def reset_mjx_data(self):
         """Enhanced reset method that ensures complete state reset"""
         # Create a fresh mjx_data from the original mj_data
@@ -87,7 +99,7 @@ class TrajectoryOptimizer:
         # warm-up the controller
         print("Jitting the controller...")
         st = time.time()
-        policy_params = self.controller.init_params()
+        policy_params = self.controller.init_params(initial_knots=self._initial_knots())
         policy_params, _ = self.jit_optimize(self.mjx_data, policy_params)
         policy_params, _ = self.jit_optimize(self.mjx_data, policy_params)
         print(f"Time to jit: {time.time() - st:.3f} seconds")
@@ -182,7 +194,7 @@ class TrajectoryOptimizer:
         
         self.reset_mjx_data()
         
-        policy_params = self.controller.init_params(seed=seed)
+        policy_params = self.controller.init_params(initial_knots=self._initial_knots(), seed=seed)
         mean_knots = policy_params.mean 
 
         knots_list.append(mean_knots)
@@ -281,7 +293,7 @@ class TrajectoryOptimizer:
     ) -> list:
 
         self.__warm_up()
-        policy_params = self.controller.init_params(seed=seed)
+        policy_params = self.controller.init_params(initial_knots=self._initial_knots(), seed=seed)
         controller_name = self.controller_name
         task_name = self.controller.task.__class__.__name__
         base_dir = Path(__file__).parent
@@ -291,7 +303,7 @@ class TrajectoryOptimizer:
 
         knots_list = [] 
         cost_list = []
-        policy_params = self.controller.init_params(seed=seed)
+        policy_params = self.controller.init_params(initial_knots=self._initial_knots(), seed=seed)
         mean_knots = policy_params.mean 
         knots_list.append(mean_knots)
 

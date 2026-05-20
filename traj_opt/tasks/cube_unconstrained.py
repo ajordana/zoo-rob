@@ -1,0 +1,92 @@
+from typing import Dict
+
+import jax
+import jax.numpy as jnp
+import mujoco
+from mujoco import mjx
+
+from hydrax import ROOT
+from hydrax.task_base import Task
+
+# Modified from Hydrax: control bounds are enforced via a penalty in the
+# running cost instead of hard clipping.
+# https://github.com/vincekurtz/hydrax/blob/main/hydrax/tasks/cube.py
+
+
+class CubeRotationUnconstrained(Task):
+    """Cube rotation with the LEAP hand (penalty-bound controls)."""
+
+    def __init__(self) -> None:
+        mj_model = mujoco.MjModel.from_xml_path(ROOT + "/models/cube/scene.xml")
+
+        self.lb = mj_model.actuator_ctrlrange[:, 0].copy()
+        self.ub = mj_model.actuator_ctrlrange[:, 1].copy()
+
+        mj_model.actuator_forcelimited[:] = 0
+        mj_model.actuator_ctrllimited[:] = 0
+        mj_model.actuator_ctrlrange[:] = [-jnp.inf, jnp.inf]
+
+        super().__init__(
+            mj_model,
+            trace_sites=["cube_center", "if_tip", "mf_tip", "rf_tip", "th_tip"],
+        )
+
+        self.cube_position_sensor = mujoco.mj_name2id(
+            mj_model, mujoco.mjtObj.mjOBJ_SENSOR, "cube_position"
+        )
+        self.cube_orientation_sensor = mujoco.mj_name2id(
+            mj_model, mujoco.mjtObj.mjOBJ_SENSOR, "cube_orientation"
+        )
+
+        self.delta = 0.015
+
+    def _bound_violation(self, ctrl, ord=2):
+        lower = jnp.maximum(self.lb - ctrl, 0)
+        upper = jnp.maximum(ctrl - self.ub, 0)
+        v = lower + upper
+        penalty = 10 * jnp.linalg.norm(v, ord)
+        penalty = jnp.where(penalty != 0, penalty + 1, penalty)
+        return penalty
+
+    def _get_cube_position_err(self, state: mjx.Data) -> jax.Array:
+        sensor_adr = self.model.sensor_adr[self.cube_position_sensor]
+        return state.sensordata[sensor_adr : sensor_adr + 3]
+
+    def _get_cube_orientation_err(self, state: mjx.Data) -> jax.Array:
+        sensor_adr = self.model.sensor_adr[self.cube_orientation_sensor]
+        cube_quat = state.sensordata[sensor_adr : sensor_adr + 4]
+        goal_quat = jnp.array([1.0, 0.0, 0.0, 0.0])
+        return mjx._src.math.quat_sub(cube_quat, goal_quat)
+
+    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+        position_err = self._get_cube_position_err(state)
+        squared_distance = jnp.sum(jnp.square(position_err[0:2]))
+        position_cost = 0.1 * squared_distance + 100 * jnp.maximum(
+            squared_distance - self.delta**2, 0.0
+        )
+
+        orientation_err = self._get_cube_orientation_err(state)
+        orientation_cost = jnp.sum(jnp.square(orientation_err))
+
+        grasp_cost = 0.001 * jnp.sum(jnp.square(control))
+        bound_violation_cost = self._bound_violation(control)
+
+        return position_cost + orientation_cost + grasp_cost + bound_violation_cost
+
+    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+        position_err = self._get_cube_position_err(state)
+        return 100 * jnp.sum(jnp.square(position_err))
+
+    def domain_randomize_model(self, rng: jax.Array) -> Dict[str, jax.Array]:
+        n_geoms = self.model.geom_friction.shape[0]
+        multiplier = jax.random.uniform(rng, (n_geoms,), minval=0.5, maxval=2.0)
+        new_frictions = self.model.geom_friction.at[:, 0].set(
+            self.model.geom_friction[:, 0] * multiplier
+        )
+        return {"geom_friction": new_frictions}
+
+    def domain_randomize_data(
+        self, data: mjx.Data, rng: jax.Array
+    ) -> Dict[str, jax.Array]:
+        shift = 0.005 * jax.random.normal(rng, (self.model.nq,))
+        return {"qpos": data.qpos + shift}
